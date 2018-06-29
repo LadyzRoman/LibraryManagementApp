@@ -26,12 +26,22 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
         main.cpp \
-        mainwindow.cpp
+        mainwindow.cpp \
+    bookmodel.cpp \
+    readermodel.cpp \
+    readerstablemodel.cpp \
+    bookstablemodel.cpp \
+    database.cpp
 
 HEADERS += \
-        mainwindow.h
+        mainwindow.h \
+    bookmodel.h \
+    readermodel.h \
+    readerstablemodel.h \
+    bookstablemodel.h \
+    database.h
 
 FORMS += \
         mainwindow.ui
 
-RESOURCES +=
+
