@@ -13,7 +13,7 @@ public:
     int bookCount;
 
 public:
-    ReaderModel(QString firstName, QString lastName, int bookCount);
+    ReaderModel(QString firstName, QString lastName);
     ReaderModel() {}
 
 };

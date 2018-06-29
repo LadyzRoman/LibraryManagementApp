@@ -5,6 +5,11 @@
 #include "bookstablemodel.h"
 #include "readerstablemodel.h"
 #include "database.h"
+#include <QSqlQueryModel>
+#include <QSqlRecord>
+#include <QDebug>
+#include <QActionGroup>
+#include <QMessageBox>
 
 namespace Ui {
 class MainWindow;
@@ -33,12 +38,28 @@ private slots:
 
     void on_readersList_toggled(bool checked);
 
+    void on_deleteReader_triggered();
+
+    void on_newReader_triggered();
+
+    void on_editReader_triggered();
+
+    void on_deleteBook_triggered();
+
+    void on_newBook_triggered();
+
+    void on_editBook_triggered();
+
+private:
+    void reloadData();
+
 private:
     Ui::MainWindow *ui;
     DataBase * db;
 
     BooksTableModel *booksTableModel;
     ReadersTableModel *readersTableModel;
+
     int modelSelection;
 };
 

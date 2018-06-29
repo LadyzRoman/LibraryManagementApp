@@ -1,9 +1,10 @@
 #include "readermodel.h"
 
 
-ReaderModel::ReaderModel(QString firstName, QString lastName, int bookCount):
+ReaderModel::ReaderModel(QString firstName, QString lastName):
+    id(0),
     firstName(firstName),
     lastName(lastName),
-    bookCount(bookCount)
+    bookCount(0)
 {
 }

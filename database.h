@@ -22,13 +22,14 @@ public:
     {}
 
     void connectToDataBase();
-//    bool insertReader(ReaderModel & model);
-//    bool updateReader(ReaderModel & model);
-//    bool deleteReader(int id);
+    bool insertReader(ReaderModel & model);
+    bool updateReader(ReaderModel & model);
+    bool deleteReader(int id);
 
-//    bool insertBook(BookModel & model);
-//    bool updateBook(BookModel & model);
-//    bool deleteBook(int id);
+    bool insertBook(BookModel & model);
+    bool updateBook(BookModel & model);
+    bool deleteBook(int id);
+    QString getLastError();
 
 private:
     QSqlDatabase db;
