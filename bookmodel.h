@@ -12,7 +12,7 @@ public:
     QString autor;
 
 public:
-    BookModel(int code, QString title, QString autor);
+    BookModel(int code, QString & title, QString & autor);
     BookModel() {}
 };
 

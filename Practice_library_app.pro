@@ -34,7 +34,8 @@ SOURCES += \
     database.cpp \
     readereditdialog.cpp \
     bookeditdialog.cpp \
-    namemodel.cpp
+    namemodel.cpp \
+    statisticdialog.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -46,11 +47,14 @@ HEADERS += \
     readereditdialog.h \
     bookeditdialog.h \
     noreaderexception.h \
-    namemodel.h
+    namemodel.h \
+    statisticdialog.h \
+    statisticexception.h
 
 FORMS += \
         mainwindow.ui \
     readereditdialog.ui \
-    bookeditdialog.ui
+    bookeditdialog.ui \
+    statisticdialog.ui
 
 

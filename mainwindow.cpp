@@ -3,6 +3,7 @@
 #include "readereditdialog.h"
 #include "bookeditdialog.h"
 #include "noreaderexception.h"
+#include "statisticdialog.h"
 #include <QStringList>
 #include <QDate>
 
@@ -26,6 +27,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     db->connectToDataBase();
 
+
     QActionGroup *group = new QActionGroup(this);
     group->addAction(ui->bookList);
     group->addAction(ui->readersList);
@@ -37,6 +39,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->returnButton->setEnabled(false);
 
     ui->stackedWidget->setCurrentIndex(0);
+
+    currentReader = nullptr;
 
 }
 
@@ -153,6 +157,7 @@ void MainWindow::on_readersList_toggled(bool checked)
         readersTableModel->reload();
         ui->mainTable->setModel(readersTableModel);
         ui->mainTable->setColumnHidden(0,true);
+        ui->mainTable->setColumnHidden(4,true);
         ui->readerBookInfo->setCurrentIndex(1);
     }
     else
@@ -160,6 +165,7 @@ void MainWindow::on_readersList_toggled(bool checked)
         ui->editReader->setEnabled(false);
         ui->deleteReader->setEnabled(false);
         ui->newReader->setEnabled(false);
+        ui->mainTable->setColumnHidden(4,false);
     }
 }
 
@@ -193,11 +199,15 @@ void MainWindow::initReaderInfo()
 
     int row = model->selectedRows().first().row();
     QSqlRecord record = readersTableModel->record(row);
-    currentReader = new ReaderModel(record.value(0).toInt(), record.value(1).toString(), record.value(2).toString());
+    currentReader = new ReaderModel(record.value(0).toInt(),
+                                    record.value(2).toString(),
+                                    record.value(1).toString(),
+                                    QDateTime::fromTime_t((record.value(4).toLongLong())).date());
 
     ui->idReaderInfo->setText(QString::number(currentReader->id));
     ui->firstNameReaderInfo->setText(currentReader->firstName);
     ui->lastNameReaderInfo->setText(currentReader->lastName);
+    ui->regDateReaderInfo->setText(currentReader->regDate.toString("dd.MM.yyyy"));
 
     ui->readerBookInfoTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->readerBookInfoTable->setSelectionBehavior(QAbstractItemView::SelectRows);
@@ -430,8 +440,8 @@ void MainWindow::on_editBook_triggered()
 
 void MainWindow::on_borrowButton_clicked()
 {
-    int readerId = ui->idLine->text().toInt();
-    QString readerName = ui->lastNameCombo->currentText().append(" ").append(ui->firstNameCombo->currentText());
+    int readerId = currentReader->id;
+    QString readerName = currentReader->lastName + " " + currentReader->firstName;
     QItemSelectionModel *model = ui->mainTable->selectionModel();
     if (model->hasSelection())
     {
@@ -470,52 +480,51 @@ void MainWindow::on_findButton_clicked()
         if (!ui->idLine->text().isEmpty())
         {
                 int id = ui->idLine->text().toInt();
-
-                ReaderModel reader = db->getReader(id);
-
-                readerPrepared = true;
-
-                ui->lastNameCombo->setCurrentText(reader.lastName);
-                ui->firstNameCombo->setCurrentText(reader.firstName);
+                currentReader = new ReaderModel(db->getReader(id));
+                ui->lastNameCombo->setCurrentText(currentReader->lastName);
+                ui->firstNameCombo->blockSignals(true);
+                ui->firstNameCombo->setCurrentText(currentReader->firstName);
+                ui->firstNameCombo->blockSignals(false);
+                ui->idLine->setText(QString::number(currentReader->id));
                 ui->borrowButton->setEnabled(borrowed);
-                ui->lastNameCombo->setEnabled(false);
-                ui->firstNameCombo->setEnabled(false);
-                ui->idLine->setEnabled(false);
-                ui->findButton->setEnabled(false);
-
+                readerPrepared = true;
         }
         else if (ui->lastNameCombo->currentIndex() > 0 && ui->firstNameCombo->currentIndex() > 0)
         {
             int id = firstNameModel->record(ui->firstNameCombo->currentIndex()).value(0).toInt();
+            currentReader = new ReaderModel(id, ui->firstNameCombo->currentText(), ui->lastNameCombo->currentText());
 
             ui->idLine->setText(QString::number(id));
             readerPrepared = true;
             ui->borrowButton->setEnabled(borrowed);
-            ui->lastNameCombo->setEnabled(false);
-            ui->firstNameCombo->setEnabled(false);
-            ui->idLine->setEnabled(false);
-            ui->findButton->setEnabled(false);
         }
         else
             QMessageBox::information(this, "Выбор пользователя", "Для поиска читателя введите ID или выберите фамилию и имя из списка");
+        ui->findButton->setEnabled(false);
     }
     catch (NoReaderException e)
     {
         QMessageBox::critical(this, "Ошибка!", e.getMessage());
+        ui->idLine->setText(QString());
+        ui->lastNameCombo->setCurrentIndex(0);
     }
 }
 
 void MainWindow::on_resetButton_clicked()
 {
     readerPrepared = false;
+    delete currentReader;
+    currentReader = nullptr;
     ui->borrowButton->setEnabled(false);
     ui->lastNameCombo->setEnabled(true);
     ui->firstNameCombo->setEnabled(false);
     ui->idLine->setEnabled(true);
     ui->findButton->setEnabled(true);
     ui->lastNameCombo->setCurrentIndex(0);
+    ui->firstNameCombo->blockSignals(true);
     ui->firstNameCombo->setCurrentIndex(0);
-    ui->idLine->setText("");
+    ui->firstNameCombo->blockSignals(false);
+    ui->idLine->setText(QString());
 }
 
 void MainWindow::on_returnButton_clicked()
@@ -539,22 +548,39 @@ void MainWindow::on_idLine_returnPressed()
 
 void MainWindow::on_lastNameCombo_currentIndexChanged(int index)
 {
+    ui->idLine->setText(QString());
+    ui->firstNameCombo->blockSignals(true);
     if (index == 0)
     {
         ui->firstNameCombo->setEnabled(false);
         ui->firstNameCombo->setCurrentIndex(0);
         return;
     }
+
+    readerPrepared = false;
+    ui->borrowButton->setEnabled(false);
     QString lastName = lastNameModel->record(index).value(1).toString();
 
     firstNameModel->setQuery("SELECT id, first_name FROM reader WHERE last_name = '" + lastName + "'");
-
     ui->firstNameCombo->setEnabled(true);
     ui->firstNameCombo->setModel(firstNameModel);
+
     if(firstNameModel->rowCount() == 2)
+    {
         ui->firstNameCombo->setCurrentIndex(1);
+        if (!currentReader || currentReader->lastName != lastName)
+        {
+            ui->firstNameCombo->blockSignals(false);
+            ui->findButton->setEnabled(true);
+            ui->findButton->click();
+        }
+    }
     else
+    {
         ui->firstNameCombo->setCurrentIndex(0);
+        ui->findButton->setEnabled(true);
+    }
+    ui->firstNameCombo->blockSignals(false);
 }
 
 void MainWindow::on_booksInfoButton_clicked()
@@ -637,4 +663,38 @@ void MainWindow::on_readerTabs_currentChanged(int index)
 {
     if (index == 1)
         reloadReaderInfo(STAT_INFO);
+}
+
+void MainWindow::on_statistic_triggered()
+{
+    StatisticDialog dialog;
+
+    dialog.setWindowTitle("Статистика");
+
+    dialog.exec();
+}
+
+void MainWindow::on_idLine_textEdited(const QString & id)
+{
+    ui->findButton->setEnabled(true);
+    ui->lastNameCombo->setCurrentIndex(0);
+    ui->idLine->setText(id);
+    readerPrepared = false;
+    ui->borrowButton->setEnabled(false);
+}
+
+void MainWindow::on_firstNameCombo_currentIndexChanged(int index)
+{
+    ui->idLine->setText(QString());
+    if (index != 0)
+    {
+        ui->findButton->setEnabled(true);
+        ui->findButton->click();
+    }
+    else
+    {
+        ui->findButton->setEnabled(true);
+        ui->borrowButton->setEnabled(false);
+        readerPrepared = false;
+    }
 }

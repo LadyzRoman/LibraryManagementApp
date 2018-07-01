@@ -81,6 +81,12 @@ private slots:
 
     void on_readerTabs_currentChanged(int index);
 
+    void on_statistic_triggered();
+
+    void on_idLine_textEdited(const QString &arg1);
+
+    void on_firstNameCombo_currentIndexChanged(int index);
+
 private:
     void reloadData();
     void borrowActivate(bool activate);

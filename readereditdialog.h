@@ -13,7 +13,7 @@ class ReaderEditDialog : public QDialog
 
 public:
     explicit ReaderEditDialog(QWidget *parent = 0);
-    explicit ReaderEditDialog(QString lastName, QString firstName, QWidget *parent = 0);
+    explicit ReaderEditDialog(QString & lastName, QString & firstName, QWidget *parent = 0);
     ~ReaderEditDialog();
 
 public:

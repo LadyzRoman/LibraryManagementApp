@@ -9,7 +9,7 @@ ReaderEditDialog::ReaderEditDialog(QWidget *parent) :
     ui->setupUi(this);
 }
 
-ReaderEditDialog::ReaderEditDialog(QString lastName, QString firstName, QWidget *parent) :
+ReaderEditDialog::ReaderEditDialog(QString & lastName, QString & firstName, QWidget *parent) :
         QDialog(parent),
         lastName(lastName),
         firstName(firstName),

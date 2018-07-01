@@ -10,7 +10,7 @@ BookEditDialog::BookEditDialog(QWidget *parent) :
     ui->setupUi(this);
 }
 
-BookEditDialog::BookEditDialog(int code, QString title, QString autor, QWidget *parent):
+BookEditDialog::BookEditDialog(int code, QString & title, QString & autor, QWidget *parent):
     code(code),
     title(title),
     autor(autor),
@@ -39,7 +39,7 @@ void BookEditDialog::done(int r)
         autor = ui->autor->text();
         if (code <= 0 || title.isEmpty() || autor.isEmpty())
         {
-            QMessageBox::warning(this, "Внимание", "Все поля должны быть заполнены!", QMessageBox::Ok);
+            QMessageBox::warning(this, "Внимание", "Все поля должны быть заполнены!");
             return;
         }
         else return QDialog::done(r);

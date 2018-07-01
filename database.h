@@ -31,9 +31,13 @@ public:
     bool deleteBook(int id);
 
     bool deleteReaderStat(int readerId);
+    bool deleteStat();
 
     ReaderModel getReader(int id);
     ReaderModel getBorrower(int bookId);
+
+    QSqlRecord getBriefStat(QDate start, QDate end);
+    QString getFullStatQuery(QDate start, QDate end);
 
     QString getLastError();
     QString getReaderInfoQuery(int id);

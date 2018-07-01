@@ -1,7 +1,7 @@
 #ifndef READERMODEL_H
 #define READERMODEL_H
 
-#include <QString>
+#include <QDate>
 
 
 class ReaderModel
@@ -10,10 +10,11 @@ public:
     int id;
     QString firstName;
     QString lastName;
+    QDate regDate;
 
 public:
-    ReaderModel(QString firstName, QString lastName);
-    ReaderModel(int id, QString firstName, QString lastName);
+    ReaderModel(QString firstName, QString lastName, QDate regDate =  QDate::currentDate());
+    ReaderModel(int id, QString firstName, QString lastName, QDate regDate = QDate::currentDate());
     ReaderModel() {}
 
 };

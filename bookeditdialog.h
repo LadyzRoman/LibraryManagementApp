@@ -13,7 +13,7 @@ class BookEditDialog : public QDialog
 
 public:
     explicit BookEditDialog(QWidget *parent = 0);
-    explicit BookEditDialog(int code, QString title, QString autor, QWidget *parent = 0);
+    explicit BookEditDialog(int code, QString & title, QString & autor, QWidget *parent = 0);
     ~BookEditDialog();
 
 public:
