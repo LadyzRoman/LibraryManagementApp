@@ -33,7 +33,8 @@ SOURCES += \
     bookstablemodel.cpp \
     database.cpp \
     readereditdialog.cpp \
-    bookeditdialog.cpp
+    bookeditdialog.cpp \
+    namemodel.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -43,7 +44,9 @@ HEADERS += \
     bookstablemodel.h \
     database.h \
     readereditdialog.h \
-    bookeditdialog.h
+    bookeditdialog.h \
+    noreaderexception.h \
+    namemodel.h
 
 FORMS += \
         mainwindow.ui \

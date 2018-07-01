@@ -1,5 +1,7 @@
 #include "bookeditdialog.h"
 #include "ui_bookeditdialog.h"
+#include <QAbstractButton>
+#include <QMessageBox>
 
 BookEditDialog::BookEditDialog(QWidget *parent) :
     QDialog(parent),
@@ -26,9 +28,24 @@ BookEditDialog::~BookEditDialog()
     delete ui;
 }
 
-void BookEditDialog::on_buttonBox_accepted()
+
+
+void BookEditDialog::done(int r)
 {
-    code = ui->code->text().toInt();
-    title = ui->title->text();
-    autor = ui->autor->text();
+    if (r == QDialog::Accepted)
+    {
+        code = ui->code->text().toInt();
+        title = ui->title->text();
+        autor = ui->autor->text();
+        if (code <= 0 || title.isEmpty() || autor.isEmpty())
+        {
+            QMessageBox::warning(this, "Внимание", "Все поля должны быть заполнены!", QMessageBox::Ok);
+            return;
+        }
+        else return QDialog::done(r);
+    }
+    else return QDialog::done(r);
+
 }
+
+

@@ -20,8 +20,8 @@ public:
     QString lastName;
     QString firstName;
 
-private slots:
-    void on_buttonBox_accepted();
+public slots:
+    void done(int r);
 
 private:
     Ui::ReaderEditDialog *ui;

@@ -29,7 +29,17 @@ public:
     bool insertBook(BookModel & model);
     bool updateBook(BookModel & model);
     bool deleteBook(int id);
+
+    bool deleteReaderStat(int readerId);
+
+    ReaderModel getReader(int id);
+    ReaderModel getBorrower(int bookId);
+
     QString getLastError();
+    QString getReaderInfoQuery(int id);
+    QString getReaderStatQuery(int id);
+
+    bool insertBookBorrowRecord(int bookId, int readerId, bool borrowed);
 
 private:
     QSqlDatabase db;
@@ -42,6 +52,7 @@ private:
     void closeDB();
     bool createBookTable();
     bool createReaderTable();
+    bool createBookStatTable();
 signals:
 
 public slots:

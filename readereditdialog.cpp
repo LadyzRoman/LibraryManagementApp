@@ -1,5 +1,6 @@
 #include "readereditdialog.h"
 #include "ui_readereditdialog.h"
+#include <QMessageBox>
 
 ReaderEditDialog::ReaderEditDialog(QWidget *parent) :
     QDialog(parent),
@@ -24,9 +25,21 @@ ReaderEditDialog::~ReaderEditDialog()
     delete ui;
 }
 
-void ReaderEditDialog::on_buttonBox_accepted()
+void ReaderEditDialog::done(int r)
 {
-    lastName = ui->lastName->text();
-    firstName = ui->firstName->text();
+    if (r == QDialog::Accepted)
+    {
+        lastName = ui->lastName->text();
+        firstName = ui->firstName->text();
+
+        if (lastName.isEmpty() || firstName.isEmpty())
+        {
+            QMessageBox::warning(this, "Внимание", "Все поля должны быть заполнены!", QMessageBox::Ok);
+            return;
+        }
+        else return QDialog::done(r);
+    }
+    else return QDialog::done(r);
 }
+
 

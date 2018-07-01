@@ -13,6 +13,8 @@ public:
 
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 
+    QVariant data(const QModelIndex & item, int role = Qt::DisplayRole) const;
+
     void reload();
 
 private:

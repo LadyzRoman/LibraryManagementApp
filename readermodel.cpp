@@ -4,7 +4,13 @@
 ReaderModel::ReaderModel(QString firstName, QString lastName):
     id(0),
     firstName(firstName),
-    lastName(lastName),
-    bookCount(0)
+    lastName(lastName)
+{
+}
+
+ReaderModel::ReaderModel(int id, QString firstName, QString lastName):
+    id(id),
+    firstName(firstName),
+    lastName(lastName)
 {
 }

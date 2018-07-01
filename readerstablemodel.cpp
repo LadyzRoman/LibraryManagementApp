@@ -18,20 +18,23 @@ QVariant ReadersTableModel::headerData(int section, Qt::Orientation orientation,
             default:    return QVariant();
         }
     }
-    return QVariant();
+    else return QSqlQueryModel::headerData(section, orientation, role);
 }
 
 
 void ReadersTableModel::reload()
 {
-    setQuery("SELECT "
-             "R.ID, "
-             "R.LAST_NAME, "
-             "R.FIRST_NAME, "
-             "COUNT(B.READER_ID) "
-             "FROM READER R "
-             "LEFT JOIN BOOK B ON B.READER_ID = R.ID "
-             "GROUP BY R.ID");
+    setQuery("SELECT reader.id, "
+             "reader.last_name, "
+             "reader.first_name, "
+             "book_count "
+             "FROM reader LEFT JOIN "
+             "( SELECT reader_id, count(reader_id) as book_count FROM book_stat "
+             "WHERE borrow_status = 1 AND NOT EXISTS "
+             "( SELECT a.id as id FROM book_stat a, book_stat b WHERE "
+             "a.book_id = b.book_id AND a.reader_id = b.reader_id AND "
+             "a.borrow_status > b.borrow_status AND a.operation_date < b.operation_date "
+             "AND book_stat.id = a.id GROUP BY b.id) GROUP BY reader_id) AS bs ON reader.id = bs.reader_id");
     emit layoutChanged();
 }
 

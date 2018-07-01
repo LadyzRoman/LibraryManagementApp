@@ -21,8 +21,11 @@ public:
     QString title;
     QString autor;
 
+public slots:
+    void done(int r);
+
 private slots:
-    void on_buttonBox_accepted();
+
 
 private:
     Ui::BookEditDialog *ui;

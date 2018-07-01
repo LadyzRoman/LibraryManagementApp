@@ -10,7 +10,6 @@ public:
     int code;
     QString title;
     QString autor;
-    bool inLibrary;
 
 public:
     BookModel(int code, QString title, QString autor);

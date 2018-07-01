@@ -10,10 +10,10 @@ public:
     int id;
     QString firstName;
     QString lastName;
-    int bookCount;
 
 public:
     ReaderModel(QString firstName, QString lastName);
+    ReaderModel(int id, QString firstName, QString lastName);
     ReaderModel() {}
 
 };
