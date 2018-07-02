@@ -4,12 +4,12 @@
 #include <QSqlQueryModel>
 #include "readermodel.h"
 
-class ReadersTableModel : public QSqlQueryModel
+class ReaderTableModel : public QSqlQueryModel
 {
     Q_OBJECT
 
 public:
-    explicit ReadersTableModel(QObject *parent = nullptr);
+    explicit ReaderTableModel(QObject *parent = nullptr);
 
     // Header:
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;

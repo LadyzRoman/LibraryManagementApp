@@ -4,12 +4,12 @@
 #include <QSqlQueryModel>
 #include "bookmodel.h"
 
-class BooksTableModel : public QSqlQueryModel
+class BookTableModel : public QSqlQueryModel
 {
     Q_OBJECT
 
 public:
-    explicit BooksTableModel(QObject *parent = nullptr);
+    explicit BookTableModel(QObject *parent = nullptr);
 
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 

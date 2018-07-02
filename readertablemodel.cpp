@@ -1,11 +1,11 @@
-#include "readerstablemodel.h"
+#include "readertablemodel.h"
 
-ReadersTableModel::ReadersTableModel(QObject *parent)
+ReaderTableModel::ReaderTableModel(QObject *parent)
     : QSqlQueryModel(parent)
 {
 }
 
-QVariant ReadersTableModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant ReaderTableModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role != Qt::DisplayRole)
         return QVariant();
@@ -22,13 +22,13 @@ QVariant ReadersTableModel::headerData(int section, Qt::Orientation orientation,
 }
 
 
-void ReadersTableModel::reload()
+void ReaderTableModel::reload()
 {
     setQuery("SELECT reader.id, "
              "reader.last_name, "
              "reader.first_name, "
              "book_count, "
-             "reader.reg_date "
+             "strftime('%d.%m.%Y', reader.reg_date, 'unixepoch') "
              "FROM reader LEFT JOIN "
              "( SELECT reader_id, count(reader_id) as book_count FROM book_stat "
              "WHERE borrow_status = 1 AND NOT EXISTS "

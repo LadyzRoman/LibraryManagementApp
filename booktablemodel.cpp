@@ -1,12 +1,12 @@
-#include "bookstablemodel.h"
+#include "booktablemodel.h"
 #include <QDebug>
 
-BooksTableModel::BooksTableModel(QObject *parent)
+BookTableModel::BookTableModel(QObject *parent)
     : QSqlQueryModel(parent)
 {
 }
 
-QVariant BooksTableModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant BookTableModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role != Qt::DisplayRole)
         return QVariant();
@@ -23,14 +23,14 @@ QVariant BooksTableModel::headerData(int section, Qt::Orientation orientation, i
     else return QSqlQueryModel::headerData(section, orientation, role);
 }
 
-QVariant BooksTableModel::data(const QModelIndex &item, int role) const
+QVariant BookTableModel::data(const QModelIndex &item, int role) const
 {
     if (item.column() == 4 && role == Qt::DisplayRole)
             return QVariant(QSqlQueryModel::data(item, role).toBool() ? "Да" : "Нет");
     else return QSqlQueryModel::data(item, role);
 }
 
-void BooksTableModel::reload()
+void BookTableModel::reload()
 {
     setQuery("SELECT book.id, "
               "book.code, "

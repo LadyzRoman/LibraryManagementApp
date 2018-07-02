@@ -8,9 +8,10 @@
 #include <QDebug>
 #include <QActionGroup>
 #include <QMessageBox>
+#include <QDataWidgetMapper>
 #include "readerproxymodel.h"
-#include "bookstablemodel.h"
-#include "readerstablemodel.h"
+#include "booktablemodel.h"
+#include "readertablemodel.h"
 #include "bookproxymodel.h"
 #include "namemodel.h"
 
@@ -59,8 +60,6 @@ private slots:
 
     void on_returnButton_clicked();
 
-    void on_idLine_returnPressed();
-
     void on_lastNameCombo_currentIndexChanged(int index);
 
     void on_booksInfoButton_clicked();
@@ -68,8 +67,6 @@ private slots:
     void on_readerStatButton_clicked();
 
     void on_backButton_clicked();
-
-    void on_mainTable_doubleClicked(const QModelIndex &index);
 
     void on_clearReaderStatButton_clicked();
 
@@ -93,22 +90,40 @@ private slots:
 
     void on_mainMenu_triggered();
 
-    void mainTableSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
+    void bookTableSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
 
+    void readerTableSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
+
+    void on_readerTable_doubleClicked(const QModelIndex &index);
+
+    void on_stackedWidget_currentChanged(int arg1);
 
 private:
+    void initUI();
+    void connectSignals();
+    void setupModels();
     void reloadData();
-    void borrowActivate(bool activate);
+
     void initReaderInfo();
     void reloadReaderInfo(int infoType);
     void returnBook(int bookId);
+
+    void initStartPage();
+    void initBookPage();
+    void initReaderPage();
+    void initReaderInfoPage();
+
+    void exitStartPage();
+    void exitBookPage();
+    void exitReaderPage();
+    void exitReaderInfoPage();
 
 private:
     Ui::MainWindow *ui;
     DataBase * db;
 
-    BooksTableModel *booksTableModel;
-    ReadersTableModel *readersTableModel;
+    BookTableModel *bookTableModel;
+    ReaderTableModel *readerTableModel;
 
     BookProxyModel * bookProxyModel;
     ReaderProxyModel * readerProxyModel;
@@ -119,9 +134,14 @@ private:
     QSqlQueryModel * readerBookInfo;
     QSqlQueryModel * readerStatInfo;
 
-    int modelSelection;
+    QDataWidgetMapper * readerInfoMapper;
+
+    int currentPage;
     bool borrowed;
     bool readerPrepared;
+
+    bool bookChanged;
+    bool readerChanged;
 
     ReaderModel * currentReader;
     };

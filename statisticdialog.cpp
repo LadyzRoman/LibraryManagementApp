@@ -26,6 +26,7 @@ StatisticDialog::StatisticDialog(QWidget *parent) :
     ui->fullStatTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     ui->fullStatTable->setSelectionBehavior(QAbstractItemView::SelectRows);
     ui->fullStatTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    ui->fullStatTable->setModel(statModel);
 }
 
 StatisticDialog::StatisticDialog(DataBase *db, QWidget *parent):
@@ -71,8 +72,6 @@ void StatisticDialog::on_showStatButton_clicked()
         statModel->setHeaderData(3, Qt::Horizontal, "Шифр книги");
         statModel->setHeaderData(4, Qt::Horizontal, "Название книги");
         statModel->setHeaderData(5, Qt::Horizontal, "Тип операции");
-
-        ui->fullStatTable->setModel(statModel);
 
         ui->clearStatButton->setEnabled(true);
     }

@@ -31,22 +31,20 @@ SOURCES += \
         mainwindow.cpp \
     bookmodel.cpp \
     readermodel.cpp \
-    readerstablemodel.cpp \
-    bookstablemodel.cpp \
     database.cpp \
     readereditdialog.cpp \
     bookeditdialog.cpp \
     namemodel.cpp \
     statisticdialog.cpp \
     bookproxymodel.cpp \
-    readerproxymodel.cpp
+    readerproxymodel.cpp \
+    booktablemodel.cpp \
+    readertablemodel.cpp
 
 HEADERS += \
         mainwindow.h \
     bookmodel.h \
     readermodel.h \
-    readerstablemodel.h \
-    bookstablemodel.h \
     database.h \
     readereditdialog.h \
     bookeditdialog.h \
@@ -55,7 +53,9 @@ HEADERS += \
     statisticdialog.h \
     statisticexception.h \
     bookproxymodel.h \
-    readerproxymodel.h
+    readerproxymodel.h \
+    booktablemodel.h \
+    readertablemodel.h
 
 FORMS += \
         mainwindow.ui \

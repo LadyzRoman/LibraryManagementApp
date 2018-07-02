@@ -148,8 +148,8 @@ ReaderModel DataBase::getReader(int id)
     if (query.exec() && query.next())
         return ReaderModel(id,
                            query.value(0).toString(),
-                           query.value(1).toString(),
-                           QDateTime::fromTime_t(query.value(2).toLongLong()).date());
+                           query.value(1).toString());
+                           //QDateTime::fromTime_t(query.value(2).toLongLong()).date());
     else
         throw NoReaderException("Читатель с данным ID не найден");
 }

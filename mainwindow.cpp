@@ -12,57 +12,30 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     db(new DataBase),
-    booksTableModel(new BooksTableModel),
-    readersTableModel(new ReadersTableModel),
+    bookTableModel(new BookTableModel),
+    readerTableModel(new ReaderTableModel),
     readerProxyModel(new ReaderProxyModel),
     bookProxyModel(new BookProxyModel),
     firstNameModel(new NameModel),
     lastNameModel(new NameModel),
     readerBookInfo(new QSqlQueryModel),
     readerStatInfo(new QSqlQueryModel),
-    borrowed(false),
-    readerPrepared(false)
+    readerInfoMapper(new QDataWidgetMapper)
 {
     ui->setupUi(this);
 
-
-    setWindowTitle("Управление бибилиотекой");
-    QActionGroup *group = new QActionGroup(this);
-    group->addAction(ui->bookList);
-    group->addAction(ui->readersList);
-    ui->menuBar->setVisible(false);
-    ui->toolBar->setVisible(false);
-    ui->statusBar->setVisible(false);
-    ui->borrowButton->setEnabled(false);
-    ui->returnButton->setEnabled(false);
-    ui->stackedWidget->setCurrentIndex(0);
-
-    QObject::connect(ui->codeFilterLineEdit, SIGNAL(textChanged(QString)),
-                     bookProxyModel, SLOT(setCodeFilter(QString)));
-    QObject::connect(ui->titleFilterLineEdit, SIGNAL(textChanged(QString)),
-                     bookProxyModel, SLOT(setTitleFilter(QString)));
-    QObject::connect(ui->autorFilterLineEdit, SIGNAL(textChanged(QString)),
-                     bookProxyModel, SLOT(setAutorFilter(QString)));
-    QObject::connect(ui->allBookRadioButton, SIGNAL(toggled(bool)),
-                     bookProxyModel, SLOT(setborrowFilter(bool)));
-
-    QObject::connect(ui->lastNameFilterLineEdit, SIGNAL(textChanged(QString)),
-                     readerProxyModel, SLOT(setLastNameFilter(QString)));
-    QObject::connect(ui->firstNameFilterLineEdit, SIGNAL(textChanged(QString)),
-                     readerProxyModel, SLOT(setFirstNameFilter(QString)));
-
-
     db->connectToDataBase();
-    currentReader = nullptr;
-    bookProxyModel->setSourceModel(booksTableModel);
-    readerProxyModel->setSourceModel(readersTableModel);
+
+    setupModels();
+    connectSignals();
+    initUI();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
-    delete booksTableModel;
-    delete readersTableModel;
+    delete bookTableModel;
+    delete readerTableModel;
     delete db;
     delete readerProxyModel;
     delete bookProxyModel;
@@ -71,27 +44,13 @@ MainWindow::~MainWindow()
     delete currentReader;
     delete readerBookInfo;
     delete readerStatInfo;
+    delete readerInfoMapper;
 }
 
 void MainWindow::on_startButton_clicked()
 {
-    ui->mainTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->mainTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui->mainTable->setSelectionMode(QAbstractItemView::SingleSelection);
-
-    ui->menuBar->setVisible(true);
-    ui->toolBar->setVisible(true);
-    ui->statusBar->setVisible(true);
-
-    ui->editReader->setVisible(false);
-    ui->deleteReader->setVisible(false);
-    ui->newReader->setVisible(false);
-
-    ui->readerStatButton->setEnabled(false);
-    ui->booksInfoButton->setEnabled(false);
-
-    ui->bookList->setChecked(true);
     ui->stackedWidget->setCurrentIndex(1);
+    exitStartPage();
 }
 
 void MainWindow::on_exitButton_clicked()
@@ -102,143 +61,22 @@ void MainWindow::on_exitButton_clicked()
 void MainWindow::on_bookList_toggled(bool checked)
 {
     if (checked)
-    {
-        modelSelection = MainWindow::BOOKS_SELECTED;
-
-        ui->newBook->setVisible(true);
-        ui->editBook->setVisible(true);
-        ui->deleteBook->setVisible(true);
-        ui->newBook->setEnabled(true);
-        ui->editBook->setEnabled(false);
-        ui->deleteBook->setEnabled(false);
-        ui->borrowButton->setEnabled(false);
-        ui->returnButton->setEnabled(false);
-        booksTableModel->reload();
-        ui->mainTable->setModel(bookProxyModel);
-        QObject::connect(ui->mainTable->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
-                         this, SLOT(mainTableSelectionChanged(QItemSelection,QItemSelection)));
-        if (!readerPrepared)
-        {
-            lastNameModel->setQuery(db->getLastNameModelQuery());
-            ui->firstNameCombo->setEnabled(false);
-            ui->lastNameCombo->setModel(lastNameModel);
-            ui->lastNameCombo->setCurrentIndex(0);
-            ui->firstNameCombo->setCurrentIndex(0);
-        }
-        else
-        {
-            ui->findButton->setEnabled(true);
-            ui->findButton->click();
-        }
-        ui->mainTable->setColumnHidden(0,true);
-        ui->readerBookInfo->setCurrentIndex(0);
-
         ui->stackedWidget->setCurrentIndex(1);
-
-        borrowed = false;
-    }
-    else
-    {
-        ui->newBook->setVisible(false);
-        ui->editBook->setVisible(false);
-        ui->deleteBook->setVisible(false);
-        QObject::disconnect(ui->mainTable->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
-                            this, SLOT(mainTableSelectionChanged(QItemSelection,QItemSelection)));
-    }
 }
 
 void MainWindow::on_readersList_toggled(bool checked)
 {
     if (checked)
-    {
-        modelSelection = MainWindow::READERS_SELECTED;
-
-        ui->editReader->setVisible(true);
-        ui->newReader->setVisible(true);
-        ui->deleteReader->setVisible(true);
-        ui->editReader->setEnabled(true);
-        ui->newReader->setEnabled(false);
-        ui->deleteReader->setEnabled(false);
-
-        readersTableModel->reload();
-        ui->mainTable->setModel(readerProxyModel);
-        QObject::connect(ui->mainTable->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
-                         this, SLOT(mainTableSelectionChanged(QItemSelection,QItemSelection)));
-        ui->mainTable->setColumnHidden(0,true);
-        ui->mainTable->setColumnHidden(4,true);
-        ui->readerBookInfo->setCurrentIndex(1);
-    }
-    else
-    {
-        ui->editReader->setVisible(false);
-        ui->deleteReader->setVisible(false);
-        ui->newReader->setVisible(false);
-        ui->mainTable->setColumnHidden(4,false);
-        QObject::disconnect(ui->mainTable->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
-                            this, SLOT(mainTableSelectionChanged(QItemSelection,QItemSelection)));
-    }
+        ui->stackedWidget->setCurrentIndex(2);
 }
 
-void MainWindow::reloadData()
-{
-    switch(modelSelection)
-    {
-        case MainWindow::BOOKS_SELECTED:
-            booksTableModel->reload();
-            ui->editBook->setEnabled(false);
-            ui->deleteBook->setEnabled(false);
-            ui->returnButton->setEnabled(false);
-            ui->borrowButton->setEnabled(false);
-            break;
-
-        case MainWindow::READERS_SELECTED:
-            readersTableModel->reload();
-            ui->editReader->setEnabled(false);
-            ui->deleteReader->setEnabled(false);
-            ui->readerStatButton->setEnabled(false);
-            ui->booksInfoButton->setEnabled(false);
-            break;
-    }
-}
-
-void MainWindow::initReaderInfo()
-{
-    QItemSelectionModel *model = ui->mainTable->selectionModel();
-    if (!model->hasSelection())
-        return;
-
-    int row = readerProxyModel->mapToSource(model->selectedRows().first()).row();
-    QSqlRecord record = readersTableModel->record(row);
-    currentReader = new ReaderModel(record.value(0).toInt(),
-                                    record.value(2).toString(),
-                                    record.value(1).toString(),
-                                    QDateTime::fromTime_t((record.value(4).toLongLong())).date());
-
-    ui->idReaderInfo->setText(QString::number(currentReader->id));
-    ui->firstNameReaderInfo->setText(currentReader->firstName);
-    ui->lastNameReaderInfo->setText(currentReader->lastName);
-    ui->regDateReaderInfo->setText(currentReader->regDate.toString("dd.MM.yyyy"));
-
-    ui->readerBookInfoTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->readerBookInfoTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui->readerBookInfoTable->setSelectionMode(QAbstractItemView::SingleSelection);
-
-    ui->readerStatInfoTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    ui->readerStatInfoTable->setSelectionBehavior(QAbstractItemView::SelectRows);
-    ui->readerStatInfoTable->setSelectionMode(QAbstractItemView::SingleSelection);
-
-    ui->returnButtonReaderInfo->setEnabled(false);
-
-    reloadReaderInfo(STAT_INFO);
-    reloadReaderInfo(BOOK_INFO);
-}
 
 void MainWindow::reloadReaderInfo(int infoType)
 {
     switch(infoType)
     {
         case BOOK_INFO:
-            readerBookInfo->setQuery(db->getReaderInfoQuery(currentReader->id));
+            readerBookInfo->setQuery(db->getReaderInfoQuery(ui->idReaderInfo->text().toInt()));
             readerBookInfo->setHeaderData(1, Qt::Horizontal, "Шифр");
             readerBookInfo->setHeaderData(2, Qt::Horizontal, "Название");
             readerBookInfo->setHeaderData(3, Qt::Horizontal, "Автор");
@@ -248,7 +86,7 @@ void MainWindow::reloadReaderInfo(int infoType)
             ui->readerBookInfoTable->setColumnHidden(0, true);
             break;
         case STAT_INFO:
-            readerStatInfo->setQuery(db->getReaderStatQuery(currentReader->id));
+            readerStatInfo->setQuery(db->getReaderStatQuery(ui->idReaderInfo->text().toInt()));
             readerStatInfo->setHeaderData(0, Qt::Horizontal, "Дата операции");
             readerStatInfo->setHeaderData(1, Qt::Horizontal, "Шифр");
             readerStatInfo->setHeaderData(2, Qt::Horizontal, "Название");
@@ -266,7 +104,11 @@ void MainWindow::returnBook(int bookId)
         int readerId = db->getBorrower(bookId).id;
 
         if (db->insertBookBorrowRecord(bookId, readerId, 0))
+        {
             QMessageBox::information(this, "Книга сдана", "Книга принята в библиотеку");
+            bookChanged = true;
+            readerChanged = true;
+        }
         else
             QMessageBox::critical(this,"Ошибка!", "Ошибка при связи с базой данных");
     }
@@ -276,13 +118,112 @@ void MainWindow::returnBook(int bookId)
     }
 }
 
+void MainWindow::initStartPage()
+{
+    ui->menuBar->setVisible(false);
+    ui->toolBar->setVisible(false);
+    ui->statusBar->setVisible(false);
+}
+
+void MainWindow::initBookPage()
+{
+    ui->newBook->setVisible(true);
+    ui->editBook->setVisible(true);
+    ui->deleteBook->setVisible(true);
+
+    ui->newBook->setEnabled(true);
+    ui->editBook->setEnabled(false);
+    ui->deleteBook->setEnabled(false);
+
+    QItemSelectionModel *model = ui->bookTable->selectionModel();
+    ui->borrowButton->setEnabled(model->hasSelection() && borrowed && readerPrepared);
+    ui->returnButton->setEnabled(model->hasSelection() && !borrowed);
+
+    ui->bookList->setChecked(true);
+
+    if (bookChanged)
+        bookTableModel->reload();
+    bookChanged = false;
+
+    if (!readerPrepared)
+    {
+        ui->firstNameCombo->setEnabled(false);
+        ui->lastNameCombo->setCurrentIndex(0);
+        ui->firstNameCombo->setCurrentIndex(0);
+    }
+}
+
+void MainWindow::initReaderPage()
+{
+    ui->editReader->setVisible(true);
+    ui->newReader->setVisible(true);
+    ui->deleteReader->setVisible(true);
+
+    QItemSelectionModel *model = ui->readerTable->selectionModel();
+    ui->newReader->setEnabled(true);
+    ui->editReader->setEnabled(model->hasSelection());
+    ui->deleteReader->setEnabled(model->hasSelection());
+
+    ui->booksInfoButton->setEnabled(model->hasSelection());
+    ui->readerStatButton->setEnabled(model->hasSelection());
+
+    if (readerChanged)
+        readerTableModel->reload();
+    readerChanged = false;
+}
+
+void MainWindow::initReaderInfoPage()
+{
+
+    ui->newReader->setEnabled(false);
+    ui->newReader->setVisible(true);
+    ui->editReader->setVisible(true);
+    ui->deleteReader->setVisible(true);
+    ui->returnButtonReaderInfo->setEnabled(false);
+    QItemSelectionModel *model = ui->readerTable->selectionModel();
+    if (!model->hasSelection())
+        return;
+    int row = readerProxyModel->mapToSource(model->selectedRows().first()).row();
+    readerInfoMapper->setCurrentIndex(row);
+    reloadReaderInfo(STAT_INFO);
+    reloadReaderInfo(BOOK_INFO);
+}
+
+void MainWindow::exitStartPage()
+{
+    ui->menuBar->setVisible(true);
+    ui->toolBar->setVisible(true);
+    ui->statusBar->setVisible(true);
+}
+
+void MainWindow::exitBookPage()
+{
+    ui->newBook->setVisible(false);
+    ui->editBook->setVisible(false);
+    ui->deleteBook->setVisible(false);
+}
+
+void MainWindow::exitReaderPage()
+{
+    ui->editReader->setVisible(false);
+    ui->deleteReader->setVisible(false);
+    ui->newReader->setVisible(false);
+}
+
+void MainWindow::exitReaderInfoPage()
+{
+    ui->editReader->setVisible(false);
+    ui->deleteReader->setVisible(false);
+    ui->newReader->setVisible(false);
+}
+
 void MainWindow::on_deleteReader_triggered()
 {
-        QItemSelectionModel *model = ui->mainTable->selectionModel();
+        QItemSelectionModel *model = ui->readerTable->selectionModel();
         if (!model->hasSelection())
             return;
         int row = readerProxyModel->mapToSource(model->selectedRows().first()).row();
-        QSqlRecord record = readersTableModel->record(row);
+        QSqlRecord record = readerTableModel->record(row);
         int id =  record.value(0).toInt();
         QString lastName = record.value(1).toString();
         QString firstName = record.value(2).toString();
@@ -300,9 +241,10 @@ void MainWindow::on_deleteReader_triggered()
                 else
                 {
                     if (ui->stackedWidget->currentIndex() != 1)
-                        ui->stackedWidget->setCurrentIndex(1);
+                        ui->stackedWidget->setCurrentIndex(2);
                     currentReader = nullptr;
-                    reloadData();
+                    readerTableModel->reload();
+                    readerTableSelectionChanged(QItemSelection(), QItemSelection());
                 }
             }
         }
@@ -324,7 +266,10 @@ void MainWindow::on_newReader_triggered()
         if (!db->insertReader(reader))
             QMessageBox::critical(this, "Ошибка!", "Не удалось добавить нового читателя!");
         else
-            reloadData();
+        {
+            readerTableModel->reload();
+            readerTableSelectionChanged(QItemSelection(), QItemSelection());
+        }
     }
 }
 
@@ -332,11 +277,11 @@ void MainWindow::on_newReader_triggered()
 
 void MainWindow::on_editReader_triggered()
 {
-    QItemSelectionModel *model = ui->mainTable->selectionModel();
+    QItemSelectionModel *model = ui->readerTable->selectionModel();
     if (!model->hasSelection())
         return;
     int row = readerProxyModel->mapToSource(model->selectedRows().first()).row();
-    QSqlRecord record = readersTableModel->record(row);
+    QSqlRecord record = readerTableModel->record(row);
     int id =  record.value(0).toInt();
     QString lastName = record.value(1).toString();
     QString firstName = record.value(2).toString();
@@ -354,18 +299,23 @@ void MainWindow::on_editReader_triggered()
         if (!db->updateReader(reader))
             QMessageBox::critical(this, "Ошибка!", "Операция не была выполнена!");
         else
-            reloadData();
+        {
+            readerTableModel->reload();
+            for (int i = 1; i < 4; i++)
+                ui->readerTable->selectionModel()
+                        ->select(readerProxyModel->index(row, i),QItemSelectionModel::Select);
+        }
     }
 }
 
 void MainWindow::on_deleteBook_triggered()
 {
-    QItemSelectionModel *model = ui->mainTable->selectionModel();
+    QItemSelectionModel *model = ui->bookTable->selectionModel();
     if (!model->hasSelection())
         return;
 
     int row = bookProxyModel->mapToSource(model->selectedRows().first()).row();
-    QSqlRecord record = booksTableModel->record(row);
+    QSqlRecord record = bookTableModel->record(row);
     int id =  record.value(0).toInt();
     int code = record.value(1).toInt();
     QString title = record.value(2).toString();
@@ -384,7 +334,12 @@ void MainWindow::on_deleteBook_triggered()
         if (!db->deleteBook(id))
             QMessageBox::critical(this, "Ошибка!", "Операция не была выполнена!");
         else
-            reloadData();
+        {
+            if (!record.value(4).toBool())
+                readerChanged = true;
+            bookTableModel->reload();
+            bookTableSelectionChanged(QItemSelection(), QItemSelection());
+        }
     }
 }
 
@@ -404,17 +359,20 @@ void MainWindow::on_newBook_triggered()
         if (!db->insertBook(book))
             QMessageBox::critical(this, "Ошибка", "Шифр должен быть уникальным!");
         else
-            reloadData();
+        {
+            bookTableModel->reload();
+            bookTableSelectionChanged(QItemSelection(), QItemSelection());
+        }
     }
 }
 
 void MainWindow::on_editBook_triggered()
 {
-    QItemSelectionModel *model = ui->mainTable->selectionModel();
+    QItemSelectionModel *model = ui->bookTable->selectionModel();
     if (!model->hasSelection())
         return;
     int row = bookProxyModel->mapToSource(model->selectedRows().first()).row();
-    QSqlRecord record = booksTableModel->record(row);
+    QSqlRecord record = bookTableModel->record(row);
     int id =  record.value(0).toInt();
     int code = record.value(1).toInt();
     QString title = record.value(2).toString();
@@ -436,7 +394,12 @@ void MainWindow::on_editBook_triggered()
         if (!db->updateBook(book))
             QMessageBox::critical(this, "Ошибка", "Шифр должен быть уникальным!");
         else
-            reloadData();
+        {
+            bookTableModel->reload();
+            for (int i = 1; i < 5; i++)
+                ui->bookTable->selectionModel()
+                        ->select(bookProxyModel->index(row, i),QItemSelectionModel::Select);
+        }
     }
 }
 
@@ -445,11 +408,11 @@ void MainWindow::on_borrowButton_clicked()
 {
     int readerId = currentReader->id;
     QString readerName = currentReader->lastName + " " + currentReader->firstName;
-    QItemSelectionModel *model = ui->mainTable->selectionModel();
+    QItemSelectionModel *model = ui->bookTable->selectionModel();
     if (model->hasSelection())
     {
         int row = bookProxyModel->mapToSource(model->selectedRows().first()).row();
-        QSqlRecord record = booksTableModel->record(row);
+        QSqlRecord record = bookTableModel->record(row);
         int bookId =  record.value(0).toInt();
         QString title = record.value(2).toString();
 
@@ -461,7 +424,8 @@ void MainWindow::on_borrowButton_clicked()
 
         if (db->insertBookBorrowRecord(bookId, readerId, 1))
         {
-            reloadData();
+            bookTableModel->reload();
+            readerChanged = true;
             QMessageBox::information(this, "Книга выдана", "Книга "
                        + title + " выдана читателю " + readerName);
         }
@@ -530,26 +494,25 @@ void MainWindow::on_resetButton_clicked()
 
 void MainWindow::on_returnButton_clicked()
 {
-    QItemSelectionModel *model = ui->mainTable->selectionModel();
+    QItemSelectionModel *model = ui->bookTable->selectionModel();
     if (!model->hasSelection())
         return;
 
     int row = bookProxyModel->mapToSource(model->selectedRows().first()).row();
-    QSqlRecord record = booksTableModel->record(row);
+    QSqlRecord record = bookTableModel->record(row);
     int bookId = record.value(0).toInt();
     returnBook(bookId);
-    reloadData();
+    bookTableModel->reload();
 }
-
-void MainWindow::on_idLine_returnPressed()
-{
-    on_findButton_clicked();
-}
-
 
 void MainWindow::on_lastNameCombo_currentIndexChanged(int index)
 {
     ui->idLine->setText(QString());
+
+    readerPrepared = false;
+    delete currentReader;
+    currentReader = nullptr;
+
     ui->firstNameCombo->blockSignals(true);
     if (index == 0)
     {
@@ -557,11 +520,9 @@ void MainWindow::on_lastNameCombo_currentIndexChanged(int index)
         ui->firstNameCombo->setCurrentIndex(0);
         return;
     }
-
-    readerPrepared = false;
     ui->borrowButton->setEnabled(false);
-    QString lastName = lastNameModel->record(index).value(1).toString();
 
+    QString lastName = lastNameModel->record(index).value(1).toString();
     firstNameModel->setQuery(db->getFirstNameModelQuery(lastName));
     ui->firstNameCombo->setEnabled(true);
     ui->firstNameCombo->setModel(firstNameModel);
@@ -572,8 +533,7 @@ void MainWindow::on_lastNameCombo_currentIndexChanged(int index)
         if (!currentReader || currentReader->lastName != lastName)
         {
             ui->firstNameCombo->blockSignals(false);
-            ui->findButton->setEnabled(true);
-            ui->findButton->click();
+            on_findButton_clicked();
         }
     }
     else
@@ -586,41 +546,19 @@ void MainWindow::on_lastNameCombo_currentIndexChanged(int index)
 
 void MainWindow::on_booksInfoButton_clicked()
 {
-    initReaderInfo();
-    ui->stackedWidget->setCurrentIndex(2);
+    ui->stackedWidget->setCurrentIndex(3);
     ui->readerTabs->setCurrentIndex(0);
 }
 
 void MainWindow::on_readerStatButton_clicked()
 {
-    initReaderInfo();
-    ui->stackedWidget->setCurrentIndex(2);
+    ui->stackedWidget->setCurrentIndex(3);
     ui->readerTabs->setCurrentIndex(1);
 }
 
 void MainWindow::on_backButton_clicked()
 {
-    ui->newReader->setEnabled(true);
-    ui->stackedWidget->setCurrentIndex(1);
-    if (readerPrepared)
-        on_findButton_clicked();
-    else
-    {
-        delete currentReader;
-        currentReader = nullptr;
-    }
-    reloadData();
-}
-
-void MainWindow::on_mainTable_doubleClicked(const QModelIndex&)
-{
-    if (modelSelection == READERS_SELECTED)
-    {
-        ui->newReader->setEnabled(false);
-        initReaderInfo();
-        ui->stackedWidget->setCurrentIndex(2);
-        ui->readerTabs->setCurrentIndex(0);
-    }
+    ui->stackedWidget->setCurrentIndex(2);
 }
 
 void MainWindow::on_clearReaderStatButton_clicked()
@@ -645,10 +583,9 @@ void MainWindow::on_clearReaderStatButton_clicked()
 
 void MainWindow::on_readerInfoBorrowBookButton_clicked()
 {
-    ui->idLine->setText(QString::number(currentReader->id));
+    ui->idLine->setText(ui->idReaderInfo->text());
     on_findButton_clicked();
     ui->stackedWidget->setCurrentIndex(1);
-    ui->bookList->setChecked(true);
 }
 
 void MainWindow::on_readerBookInfoTable_clicked(const QModelIndex &)
@@ -678,18 +615,19 @@ void MainWindow::on_readerTabs_currentChanged(int index)
 void MainWindow::on_statistic_triggered()
 {
     StatisticDialog dialog;
-
     dialog.setWindowTitle("Статистика");
-
     dialog.exec();
 }
 
 void MainWindow::on_idLine_textEdited(const QString & id)
 {
+
     ui->findButton->setEnabled(true);
     ui->lastNameCombo->setCurrentIndex(0);
     ui->idLine->setText(id);
     readerPrepared = false;
+    delete currentReader;
+    currentReader = nullptr;
     ui->borrowButton->setEnabled(false);
 }
 
@@ -697,15 +635,14 @@ void MainWindow::on_firstNameCombo_currentIndexChanged(int index)
 {
     ui->idLine->setText(QString());
     if (index != 0)
-    {
-        ui->findButton->setEnabled(true);
-        ui->findButton->click();
-    }
+        on_findButton_clicked();
     else
     {
         ui->findButton->setEnabled(true);
         ui->borrowButton->setEnabled(false);
         readerPrepared = false;
+        delete currentReader;
+        currentReader = nullptr;
     }
 }
 
@@ -726,37 +663,167 @@ void MainWindow::on_clearReaderFilterButton_clicked()
 
 void MainWindow::on_mainMenu_triggered()
 {
-    ui->toolBar->setVisible(false);
-    ui->menuBar->setVisible(false);
-    ui->statusBar->setVisible(false);
     ui->stackedWidget->setCurrentIndex(0);
 }
 
-void MainWindow::mainTableSelectionChanged(const QItemSelection &selected, const QItemSelection &)
+void MainWindow::bookTableSelectionChanged(const QItemSelection &selected, const QItemSelection &)
 {
-    int row;
-    QSqlRecord record;
-    switch (modelSelection)
-    {
-        case BOOKS_SELECTED:
-            ui->editBook->setEnabled(!selected.isEmpty());
-            ui->deleteBook->setEnabled(!selected.isEmpty());
+    ui->editBook->setEnabled(!selected.isEmpty());
+    ui->deleteBook->setEnabled(!selected.isEmpty());
 
-            if (!selected.isEmpty())
-            {
-                row = bookProxyModel->mapToSource(selected.indexes().first()).row();
-                record = booksTableModel->record(row);
-                borrowed = record.value(4).toBool();
-            }
-            ui->borrowButton->setEnabled(!selected.isEmpty() && borrowed && readerPrepared);
-            ui->returnButton->setEnabled(!selected.isEmpty() && !borrowed);
+    if (!selected.isEmpty())
+    {
+        int row = bookProxyModel->mapToSource(selected.indexes().first()).row();
+        QSqlRecord record = bookTableModel->record(row);
+        borrowed = record.value(4).toBool();
+    }
+    ui->borrowButton->setEnabled(!selected.isEmpty() && borrowed && readerPrepared);
+    ui->returnButton->setEnabled(!selected.isEmpty() && !borrowed);
+}
+
+void MainWindow::readerTableSelectionChanged(const QItemSelection &selected, const QItemSelection &)
+{
+    ui->editReader->setEnabled(!selected.isEmpty());
+    ui->deleteReader->setEnabled(!selected.isEmpty());
+    ui->readerStatButton->setEnabled(!selected.isEmpty());
+    ui->booksInfoButton->setEnabled(!selected.isEmpty());
+}
+
+
+void MainWindow::initUI()
+{
+    setWindowTitle("Управление бибилиотекой");
+    QActionGroup *group = new QActionGroup(this);
+    group->addAction(ui->bookList);
+    group->addAction(ui->readersList);
+    ui->menuBar->setVisible(false);
+    ui->toolBar->setVisible(false);
+    ui->statusBar->setVisible(false);
+    ui->borrowButton->setEnabled(false);
+    ui->returnButton->setEnabled(false);
+
+    ui->newReader->setVisible(false);
+    ui->editReader->setVisible(false);
+    ui->deleteReader->setVisible(false);
+
+    ui->bookTable->hideColumn(0);
+    ui->readerTable->hideColumn(0);
+    ui->readerTable->hideColumn(4);
+
+    ui->readerBookInfoTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->readerBookInfoTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->readerBookInfoTable->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    ui->readerStatInfoTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->readerStatInfoTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->readerStatInfoTable->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    ui->bookTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->bookTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->bookTable->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    ui->readerTable->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    ui->readerTable->setSelectionBehavior(QAbstractItemView::SelectRows);
+    ui->readerTable->setSelectionMode(QAbstractItemView::SingleSelection);
+
+    ui->stackedWidget->setCurrentIndex(0);
+}
+
+void MainWindow::connectSignals()
+{
+    QObject::connect(ui->codeFilterLineEdit, SIGNAL(textChanged(QString)),
+                     bookProxyModel, SLOT(setCodeFilter(QString)));
+    QObject::connect(ui->titleFilterLineEdit, SIGNAL(textChanged(QString)),
+                     bookProxyModel, SLOT(setTitleFilter(QString)));
+    QObject::connect(ui->autorFilterLineEdit, SIGNAL(textChanged(QString)),
+                     bookProxyModel, SLOT(setAutorFilter(QString)));
+    QObject::connect(ui->allBookRadioButton, SIGNAL(toggled(bool)),
+                     bookProxyModel, SLOT(setborrowFilter(bool)));
+
+    QObject::connect(ui->lastNameFilterLineEdit, SIGNAL(textChanged(QString)),
+                     readerProxyModel, SLOT(setLastNameFilter(QString)));
+    QObject::connect(ui->firstNameFilterLineEdit, SIGNAL(textChanged(QString)),
+                     readerProxyModel, SLOT(setFirstNameFilter(QString)));
+
+    QObject::connect(ui->bookTable->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
+                     this, SLOT(bookTableSelectionChanged(QItemSelection,QItemSelection)));
+    QObject::connect(ui->readerTable->selectionModel(), SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
+                     this, SLOT(readerTableSelectionChanged(QItemSelection,QItemSelection)));
+
+    QObject::connect(ui->idLine, SIGNAL(returnPressed()),
+                     this, SLOT(on_findButton_clicked()));
+
+}
+
+void MainWindow::setupModels()
+{
+    currentReader = nullptr;
+    borrowed = false;
+    readerPrepared = false;
+    readerChanged = true;
+    bookChanged = true;
+
+    readerTableModel->reload();
+    bookTableModel->reload();
+
+    lastNameModel->setQuery(db->getLastNameModelQuery());
+    firstNameModel->setQuery(db->getFirstNameModelQuery(QString()));
+
+    bookProxyModel->setSourceModel(bookTableModel);
+    readerProxyModel->setSourceModel(readerTableModel);
+
+    ui->readerTable->setModel(readerProxyModel);
+    ui->bookTable->setModel(bookProxyModel);
+    ui->readerBookInfoTable->setModel(readerBookInfo);
+    ui->readerStatInfoTable->setModel(readerStatInfo);
+    ui->lastNameCombo->setModel(lastNameModel);
+    ui->firstNameCombo->setModel(firstNameModel);
+
+    readerInfoMapper->setModel(readerTableModel);
+    readerInfoMapper->addMapping(ui->idReaderInfo, 0);
+    readerInfoMapper->addMapping(ui->lastNameReaderInfo, 1);
+    readerInfoMapper->addMapping(ui->firstNameReaderInfo, 2);
+    readerInfoMapper->addMapping(ui->regDateReaderInfo, 4);
+}
+
+void MainWindow::on_readerTable_doubleClicked(const QModelIndex &)
+{
+    ui->stackedWidget->setCurrentIndex(3);
+    ui->readerTabs->setCurrentIndex(0);
+}
+
+void MainWindow::on_stackedWidget_currentChanged(int index)
+{
+    switch (currentPage)
+    {
+        case 0:
+            exitStartPage();
             break;
-        case READERS_SELECTED:
-            ui->editReader->setEnabled(!selected.isEmpty());
-            ui->deleteReader->setEnabled(!selected.isEmpty());
-            ui->readerStatButton->setEnabled(!selected.isEmpty());
-            ui->booksInfoButton->setEnabled(!selected.isEmpty());
+        case 1:
+            exitBookPage();
+            break;
+        case 2:
+            exitReaderPage();
+            break;
+        case 3:
+            exitReaderInfoPage();
             break;
     }
-    qDebug() << !selected.isEmpty();
+    switch (index)
+    {
+        case 0:
+            initStartPage();
+            break;
+        case 1:
+            initBookPage();
+            break;
+        case 2:
+            initReaderPage();
+            break;
+        case 3:
+            initReaderInfoPage();
+            break;
+    }
+
+    currentPage = index;
 }
