@@ -39,9 +39,11 @@ public:
     QSqlRecord getBriefStat(QDate start, QDate end);
     QString getFullStatQuery(QDate start, QDate end);
 
-    QString getLastError();
     QString getReaderInfoQuery(int id);
     QString getReaderStatQuery(int id);
+    QString getLastNameModelQuery();
+    QString getFirstNameModelQuery(const QString lastName);
+
 
     bool insertBookBorrowRecord(int bookId, int readerId, bool borrowed);
 

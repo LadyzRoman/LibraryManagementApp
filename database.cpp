@@ -180,8 +180,8 @@ QSqlRecord DataBase::getBriefStat(QDate start, QDate end)
 
     QDateTime startTime = QDateTime(start);
     QDateTime endTime = QDateTime(end);
-    startTime.setTime(QTime(0,0));
-    endTime.setTime(QTime::currentTime());
+    startTime.setTime(QTime(0, 0));
+    endTime.setTime(QTime(23, 59));
     long long startDate = startTime.toTime_t();
     long long endDate = endTime.toTime_t();
 
@@ -214,8 +214,8 @@ QString DataBase::getFullStatQuery(QDate start, QDate end)
 {
     QDateTime startTime = QDateTime(start);
     QDateTime endTime = QDateTime(end);
-    startTime.setTime(QTime(0,0));
-    endTime.setTime(QTime::currentTime());
+    startTime.setTime(QTime(0, 0));
+    endTime.setTime(QTime(23, 59));
     QString startDate = QString::number(startTime.toTime_t());
     QString endDate = QString::number(endTime.toTime_t());
 
@@ -234,10 +234,6 @@ QString DataBase::getFullStatQuery(QDate start, QDate end)
            " ORDER BY book_stat.operation_date DESC";
 }
 
-QString DataBase::getLastError()
-{
-    return db.lastError().text();
-}
 
 QString DataBase::getReaderInfoQuery(int id)
 {
@@ -263,6 +259,16 @@ QString DataBase::getReaderStatQuery(int id)
            "FROM book_stat INNER JOIN book ON book.id = book_stat.book_id "
            "WHERE book_stat.reader_id = " + QString::number(id)
             + " ORDER BY book_stat.operation_date DESC";
+}
+
+QString DataBase::getLastNameModelQuery()
+{
+    return "SELECT id, last_name FROM reader GROUP BY last_name";
+}
+
+QString DataBase::getFirstNameModelQuery(const QString lastName)
+{
+    return "SELECT id, first_name FROM reader WHERE last_name = '" + lastName + "'";
 }
 
 bool DataBase::insertBookBorrowRecord(int bookId, int readerId, bool borrowed)

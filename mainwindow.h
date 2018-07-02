@@ -8,8 +8,10 @@
 #include <QDebug>
 #include <QActionGroup>
 #include <QMessageBox>
+#include "readerproxymodel.h"
 #include "bookstablemodel.h"
 #include "readerstablemodel.h"
+#include "bookproxymodel.h"
 #include "namemodel.h"
 
 namespace Ui {
@@ -32,8 +34,6 @@ private slots:
     void on_startButton_clicked();
 
     void on_exitButton_clicked();
-
-    void on_mainTable_clicked(const QModelIndex &index);
 
     void on_bookList_toggled(bool checked);
 
@@ -87,6 +87,15 @@ private slots:
 
     void on_firstNameCombo_currentIndexChanged(int index);
 
+    void on_clearFilterButton_clicked();
+
+    void on_clearReaderFilterButton_clicked();
+
+    void on_mainMenu_triggered();
+
+    void mainTableSelectionChanged(const QItemSelection & selected, const QItemSelection & deselected);
+
+
 private:
     void reloadData();
     void borrowActivate(bool activate);
@@ -100,6 +109,10 @@ private:
 
     BooksTableModel *booksTableModel;
     ReadersTableModel *readersTableModel;
+
+    BookProxyModel * bookProxyModel;
+    ReaderProxyModel * readerProxyModel;
+
     NameModel * firstNameModel;
     NameModel * lastNameModel;
 

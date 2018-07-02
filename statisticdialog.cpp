@@ -92,7 +92,8 @@ void StatisticDialog::on_clearStatButton_clicked()
     if (messageBox.exec() == QMessageBox::Yes)
     {
         if (!db->deleteStat())
-            qDebug() << db->getLastError();
-        statModel->setQuery(statModel->query().lastQuery());
+            QMessageBox::critical(this, "Ошибка!", "Не удалось удалить статистику!");
+        else
+            statModel->setQuery(statModel->query().lastQuery());
     }
 }

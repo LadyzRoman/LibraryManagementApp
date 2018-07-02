@@ -12,6 +12,8 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = Practice_library_app
 TEMPLATE = app
 
+QMAKE_CXXFLAGS_WARN_ON += -Wno-reorder
+
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings
 # depend on your compiler). Please consult the documentation of the
@@ -35,7 +37,9 @@ SOURCES += \
     readereditdialog.cpp \
     bookeditdialog.cpp \
     namemodel.cpp \
-    statisticdialog.cpp
+    statisticdialog.cpp \
+    bookproxymodel.cpp \
+    readerproxymodel.cpp
 
 HEADERS += \
         mainwindow.h \
@@ -49,7 +53,9 @@ HEADERS += \
     noreaderexception.h \
     namemodel.h \
     statisticdialog.h \
-    statisticexception.h
+    statisticexception.h \
+    bookproxymodel.h \
+    readerproxymodel.h
 
 FORMS += \
         mainwindow.ui \
