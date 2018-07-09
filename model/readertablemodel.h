@@ -2,7 +2,8 @@
 #define READERSTABLEMODEL_H
 
 #include <QSqlQueryModel>
-#include "model/sqlrecordreadermodel.h"
+
+#include "sqlrecordreadermodel.h"
 
 class ReaderTableModel : public QSqlQueryModel
 {

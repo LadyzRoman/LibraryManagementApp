@@ -1,109 +1,133 @@
 #include "database.h"
-#include "noreaderexception.h"
-#include "statisticexception.h"
+
 #include <QSqlRecord>
+#include <QDebug>
+
+#include "settings.h"
+#include "exception/noreaderexception.h"
+#include "exception/statisticexception.h"
+#include "exception/databaseexception.h"
+#include "model/sqlrecordreadermodel.h"
 
 DataBase::DataBase(QObject *parent) : QObject(parent)
-{
-    QSettings * settings = new QSettings("settings.conf", QSettings::NativeFormat);
-    dbName = settings->value("db/dbName", "mainDB1.db").toString();
-    dbPath = settings->value("db/dbPath", QDir::currentPath()).toString();
-}
+{}
 
 void DataBase::connectToDataBase()
 {
-       qDebug() << dbPath + '/' + dbName;
+    if (db.open())
+        return;
 
-       if (!QFile(dbPath + '/' + dbName).exists())
+    Settings & s = Settings::Instance();
+   if (!QFile(s.getDBName()).exists())
+       restoreDB();
+   else
+   {
+       openDB();
+       QStringList tables = db.tables();
+       if (!tables.contains("reader")
+            && !tables.contains("book")
+            && !tables.contains("book_stat"))
        {
-           if (!restoreDB())
-               qDebug() << db.lastError().text() << "restoreDB error";
+            createBookTable();
+            createReaderTable();
+            createBookStatTable();
        }
-       else
-           if (!openDB())
-               qDebug() << db.lastError().text() << "openDB error";
+       else if (!tables.contains("reader")
+                || !tables.contains("book")
+                || !tables.contains("book_stat"))
+       {
+           db.removeDatabase(db.connectionName());
+           throw DataBaseException("Данная база данных не может быть использована в программе!");
+       }
+   }
 
 
 }
 
-bool DataBase::insertReader(ReaderModel &model)
+void DataBase::insertReader(ReaderModel *reader)
 {
     QSqlQuery query;
 
-    qDebug() << query.prepare("INSERT INTO reader(first_name, last_name, reg_date) "
+    query.prepare("INSERT INTO reader(first_name, last_name, reg_date) "
                               "VALUES(:FIRST_NAME, :LAST_NAME, strftime('%s','now'))");
-    query.bindValue(":FIRST_NAME", model.firstName);
-    query.bindValue(":LAST_NAME", model.lastName);
+    query.bindValue(":FIRST_NAME", reader->getFirstName());
+    query.bindValue(":LAST_NAME", reader->getLastName());
 
-    return query.exec();
+    if (!query.exec())
+        throw DataBaseException(query.lastError().text());
 }
 
-bool DataBase::updateReader(ReaderModel &model)
+void DataBase::updateReader(ReaderModel *reader)
 {
     QSqlQuery query;
-    qDebug() << query.prepare("UPDATE reader SET "
+    query.prepare("UPDATE reader SET "
                               "first_name = :FIRST_NAME, "
                               "last_name = :LAST_NAME "
                               "WHERE id = :ID");
-    query.bindValue(":ID", model.id);
-    query.bindValue(":FIRST_NAME", model.firstName);
-    query.bindValue(":LAST_NAME", model.lastName);
+    query.bindValue(":ID", reader->getId());
+    query.bindValue(":FIRST_NAME", reader->getFirstName());
+    query.bindValue(":LAST_NAME", reader->getLastName());
 
-    return query.exec();
+    if (!query.exec())
+        throw DataBaseException(query.lastError().text());
 }
 
-bool DataBase::deleteReader(int id)
+void DataBase::deleteReader(int id)
 {
     QSqlQuery query;
 
-    qDebug() << query.prepare("DELETE FROM reader "
+    query.prepare("DELETE FROM reader "
                               "WHERE id = :ID");
     query.bindValue(":ID", id);
 
-    return query.exec();
+    if (!query.exec())
+        throw DataBaseException(query.lastError().text());
 }
 
-bool DataBase::insertBook(BookModel &model)
+void DataBase::insertBook(BookModel * book)
 {
     QSqlQuery query;
 
     query.prepare("INSERT INTO book(code, title, autor) "
                   "VALUES(:CODE, :TITLE, :AUTOR)");
-    query.bindValue(":CODE", model.code);
-    query.bindValue(":TITLE", model.title);
-    query.bindValue(":AUTOR", model.autor);
+    query.bindValue(":CODE", book->getCode());
+    query.bindValue(":TITLE", book->getTitle());
+    query.bindValue(":AUTOR", book->getAutor());
 
-    return query.exec();
+    if (!query.exec())
+        throw DataBaseException(query.lastError().text());
 }
 
-bool DataBase::updateBook(BookModel &model)
+void DataBase::updateBook(BookModel * book)
 {
     QSqlQuery query;
-    qDebug() << query.prepare("UPDATE book SET "
+    query.prepare("UPDATE book SET "
                               "code = :CODE, "
                               "title = :TITLE, "
                               "autor = :AUTOR "
                               "WHERE id = :ID");
-    query.bindValue(":ID", model.id);
-    query.bindValue(":CODE", model.code);
-    query.bindValue(":TITLE", model.title);
-    query.bindValue(":AUTOR", model.autor);
+    query.bindValue(":ID", book->getId());
+    query.bindValue(":CODE", book->getCode());
+    query.bindValue(":TITLE", book->getTitle());
+    query.bindValue(":AUTOR", book->getAutor());
 
-    return query.exec();
+    if (!query.exec())
+        throw DataBaseException(query.lastError().text());
 }
 
-bool DataBase::deleteBook(int id)
+void DataBase::deleteBook(int id)
 {
     QSqlQuery query;
 
-    qDebug() << query.prepare("DELETE FROM book "
+    query.prepare("DELETE FROM book "
                               "WHERE id = :ID");
     query.bindValue(":ID", id);
 
-    return query.exec();
+    if (!query.exec())
+        throw DataBaseException(query.lastError().text());
 }
 
-bool DataBase::deleteReaderStat(int readerId)
+void DataBase::deleteReaderStat(int readerId)
 {
     QSqlQuery query;
 
@@ -116,10 +140,11 @@ bool DataBase::deleteReaderStat(int readerId)
                   "AND a.operation_date < b.operation_date AND a.reader_id = :READER_ID GROUP BY b.id)");
     query.bindValue(":READER_ID", readerId);
 
-    return query.exec();
+    if (!query.exec())
+        throw DataBaseException(query.lastError().text());
 }
 
-bool DataBase::deleteStat()
+void DataBase::deleteStat()
 {
     QSqlQuery query;
 
@@ -131,14 +156,16 @@ bool DataBase::deleteStat()
                   "WHERE a.book_id = b.book_id AND a.reader_id = b.reader_id AND a.borrow_status > b.borrow_status "
                   "AND a.operation_date < b.operation_date GROUP BY b.id)");
 
-    return query.exec();
+    if (!query.exec())
+        throw DataBaseException(query.lastError().text());
 }
 
-ReaderModel DataBase::getReader(int id)
+SqlRecordReaderModel DataBase::getReader(int id)
 {
     QSqlQuery query;
 
     query.prepare("SELECT "
+                  "id, "
                   "first_name, "
                   "last_name, "
                   "reg_date "
@@ -146,29 +173,24 @@ ReaderModel DataBase::getReader(int id)
     query.bindValue(":ID", id);
 
     if (query.exec() && query.next())
-        return ReaderModel(id,
-                           query.value(0).toString(),
-                           query.value(1).toString());
-                           //QDateTime::fromTime_t(query.value(2).toLongLong()).date());
+        return SqlRecordReaderModel(query.record());
     else
         throw NoReaderException("Читатель с данным ID не найден");
 }
 
-ReaderModel DataBase::getBorrower(int bookId)
+int DataBase::getBorrowerId(int bookId)
 {
     QSqlQuery query;
 
-    query.prepare("SELECT reader.id, "
-                  "reader.first_name, "
-                  "reader.last_name "
-                  "FROM book_stat INNER JOIN reader ON reader_id = reader.id "
+    query.prepare("SELECT reader_id "
+                  "FROM book_stat "
                   "WHERE borrow_status = 1 "
                   "AND book_id = :BOOK_ID "
                   "ORDER BY operation_date DESC LIMIT 1");
     query.bindValue(":BOOK_ID", bookId);
 
     if (query.exec() && query.next())
-        return ReaderModel(query.value(0).toInt(), query.value(1).toString(), query.value(2).toString());
+        return query.value(0).toInt();
     else
         throw NoReaderException("Данная книга не находится у читателя");
 
@@ -216,10 +238,8 @@ QString DataBase::getFullStatQuery(QDate start, QDate end)
     QDateTime endTime = QDateTime(end);
     startTime.setTime(QTime(0, 0));
     endTime.setTime(QTime(23, 59));
-    QString startDate = QString::number(startTime.toTime_t());
-    QString endDate = QString::number(endTime.toTime_t());
 
-    return "SELECT "
+    return QString("SELECT "
            "strftime('%d.%m.%Y', book_stat.operation_date, 'unixepoch'), "
            "reader.id, "
            "reader.last_name || ' ' || reader.first_name, "
@@ -229,15 +249,16 @@ QString DataBase::getFullStatQuery(QDate start, QDate end)
            "FROM book_stat "
            "INNER JOIN book ON book_stat.book_id = book.id "
            "INNER JOIN reader ON book_stat.reader_id = reader.id "
-           "WHERE book_stat.operation_date >= " + startDate +
-           " AND book_stat.operation_date <= " + endDate +
-           " ORDER BY book_stat.operation_date DESC";
+           "WHERE book_stat.operation_date >= %1 "
+            "AND book_stat.operation_date <= %2 "
+            "ORDER BY book_stat.operation_date DESC")
+            .arg(QString::number(startTime.toTime_t()), QString::number(endTime.toTime_t()));
 }
 
 
-QString DataBase::getReaderInfoQuery(int id)
+QString DataBase::getReaderBookInfoQuery(int id)
 {
-    return " SELECT book.id, "
+    return QString(" SELECT book.id, "
            "book.code, "
            "book.title, "
            "book.autor, "
@@ -246,19 +267,19 @@ QString DataBase::getReaderInfoQuery(int id)
            "WHERE borrow_status = 1 and NOT EXISTS (SELECT a.id AS id FROM book_stat a, book_stat b  "
            "WHERE a.book_id = b.book_id AND a.reader_id = b.reader_id AND a.borrow_status > b.borrow_status "
            "AND a.operation_date < b.operation_date AND book_stat.id = a.id GROUP BY b.id)) AS bs ON book.id = bs.book_id "
-           "WHERE bs.reader_id = " + QString::number(id)
-            + " ORDER BY bs.operation_date";
+           "WHERE bs.reader_id = %1 "
+           "ORDER BY bs.operation_date").arg(QString::number(id));
 }
 
 QString DataBase::getReaderStatQuery(int id)
 {
-    return " SELECT strftime('%d.%m.%Y', book_stat.operation_date, 'unixepoch'), "
+    return QString(" SELECT strftime('%d.%m.%Y', book_stat.operation_date, 'unixepoch'), "
            "book.code, "
            "book.title, "
            "CASE WHEN book_stat.borrow_status = 1 then 'Книга взята' else 'Книга возвращена' END "
            "FROM book_stat INNER JOIN book ON book.id = book_stat.book_id "
-           "WHERE book_stat.reader_id = " + QString::number(id)
-            + " ORDER BY book_stat.operation_date DESC";
+           "WHERE book_stat.reader_id = %1 "
+           "ORDER BY book_stat.operation_date DESC").arg(id);
 }
 
 QString DataBase::getLastNameModelQuery()
@@ -268,73 +289,91 @@ QString DataBase::getLastNameModelQuery()
 
 QString DataBase::getFirstNameModelQuery(const QString lastName)
 {
-    return "SELECT id, first_name FROM reader WHERE last_name = '" + lastName + "'";
+    return QString("SELECT id, first_name FROM reader WHERE last_name = '%1'").arg(lastName);
 }
 
-bool DataBase::insertBookBorrowRecord(int bookId, int readerId, bool borrowed)
+void DataBase::insertBookBorrowRecord(int bookId, int readerId, bool borrowed)
 {
-    QSqlQuery record;
+    QSqlQuery query;
 
-    record.prepare("INSERT INTO book_stat(book_id, reader_id, borrow_status, operation_date) "
+    query.prepare("INSERT INTO book_stat(book_id, reader_id, borrow_status, operation_date) "
                    "values(:BOOK_ID, :READER_ID, :BORROW_STATUS, strftime('%s','now'))");
-    record.bindValue(":BOOK_ID", bookId);
-    record.bindValue(":READER_ID", readerId);
-    record.bindValue(":BORROW_STATUS", borrowed ? 1 : 0);
+    query.bindValue(":BOOK_ID", bookId);
+    query.bindValue(":READER_ID", readerId);
+    query.bindValue(":BORROW_STATUS", borrowed ? 1 : 0);
 
-    return record.exec();
+    if (!query.exec())
+        throw DataBaseException(query.lastError().text());
 }
 
-bool DataBase::openDB()
+void DataBase::openDB()
 {
     db = QSqlDatabase::addDatabase("QSQLITE");
-    db.setDatabaseName(dbPath + '/' + dbName);
 
-    return db.open();
+    Settings & s = Settings::Instance();
+    db.setDatabaseName(s.getDBName());
+
+    if (!db.open())
+        throw DataBaseException(db.lastError().text());
 }
 
-bool DataBase::restoreDB()
+void DataBase::restoreDB()
 {
-    return openDB()
-            && createBookTable()
-            && createReaderTable()
-            && createBookStatTable();
+    openDB();
+    createBookTable();
+    createReaderTable();
+    createBookStatTable();
 }
 
 
 void DataBase::closeDB()
 {
-    db.close();
+    if (db.open())
+    {
+        db.close();
+        QSqlDatabase::removeDatabase(db.connectionName());
+    }
 }
 
-bool DataBase::createBookTable()
+bool DataBase::isOpen()
 {
-    QSqlQuery query;
-    return query.exec("CREATE TABLE book("
-                      "id INTEGER PRIMARY KEY, "
-                      "code INTEGER NOT NULL UNIQUE, "
-                      "title VARCHAR(255) NOT NULL, "
-                      "autor VARCHAR(255))");
+    return db.open();
 }
 
-bool DataBase::createReaderTable()
+
+void DataBase::createBookTable()
 {
     QSqlQuery query;
-    return query.exec("CREATE TABLE reader("
-                      "id INTEGER PRIMARY KEY, "
-                      "first_name VARCHAR(255), "
-                      "last_name VARCHAR(255), "
-                      "reg_date INTEGER NOT NULL)");
+    if (!query.exec("CREATE TABLE book("
+                    "id INTEGER PRIMARY KEY, "
+                    "code INTEGER NOT NULL UNIQUE, "
+                    "title VARCHAR(255) NOT NULL, "
+                    "autor VARCHAR(255))"))
+        throw DataBaseException(query.lastError().text());
 }
 
-bool DataBase::createBookStatTable()
+void DataBase::createReaderTable()
 {
     QSqlQuery query;
-    return query.exec("CREATE TABLE book_stat("
+
+    if (!query.exec("CREATE TABLE reader("
+                           "id INTEGER PRIMARY KEY, "
+                           "first_name VARCHAR(255), "
+                           "last_name VARCHAR(255), "
+                           "reg_date INTEGER NOT NULL)"))
+        throw DataBaseException(query.lastError().text());
+}
+
+void DataBase::createBookStatTable()
+{
+    QSqlQuery query;
+    if (!query.exec("CREATE TABLE book_stat("
                       "id INTEGER PRIMARY KEY, "
                       "book_id INTEGER NOT NULL, "
                       "reader_id INTEGER NOT NULL,"
                       "borrow_status INTEGER NOT NULL,"
-                      "operation_date INTEGER NOT NULL)");
+                      "operation_date INTEGER NOT NULL)"))
+        throw DataBaseException(query.lastError().text());
 }
 
 

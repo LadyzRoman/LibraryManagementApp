@@ -2,8 +2,9 @@
 #define STATISTICDIALOG_H
 
 #include <QDialog>
-#include "database.h"
 #include <QSqlQueryModel>
+
+#include "database.h"
 
 namespace Ui {
 class StatisticDialog;

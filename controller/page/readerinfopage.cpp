@@ -1,12 +1,15 @@
 #include "readerinfopage.h"
 #include "ui_readerinfopage.h"
-#include "booktablemodel.h"
-#include "databaseexception.h"
-#include "model/sqlrecordbookmodel.h"
+
 
 #include <QSqlRecord>
 #include <QSqlField>
 #include <QMessageBox>
+
+#include "model/booktablemodel.h"
+#include "model/sqlrecordbookmodel.h"
+#include "exception/databaseexception.h"
+
 
 ReaderInfoPage::ReaderInfoPage(DataBase * db,  QWidget *parent) :
     QWidget(parent),
@@ -16,6 +19,8 @@ ReaderInfoPage::ReaderInfoPage(DataBase * db,  QWidget *parent) :
     readerStatInfo(new QSqlQueryModel)
 {
     ui->setupUi(this);
+
+    reader = nullptr;
 
     initModel();
     initConnection();
@@ -115,6 +120,7 @@ void ReaderInfoPage::reloadReaderStatInfo()
 
 void ReaderInfoPage::setReader(ReaderModel * reader)
 {
+    delete this->reader;
     this->reader = reader;
     ui->idReaderInfo->setText(QString::number(reader->getId()));
     ui->firstNameReaderInfo->setText(reader->getFirstName());

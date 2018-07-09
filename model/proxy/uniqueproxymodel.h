@@ -2,21 +2,25 @@
 #define UNIQUEPROXYMODEL_H
 
 #include <QAbstractTableModel>
+#include <QSortFilterProxyModel>
+#include <QSet>
 
-class UniqueProxyModel : public QAbstractTableModel
+
+class UniqueProxyModel : public QSortFilterProxyModel
 {
     Q_OBJECT
 
 public:
     explicit UniqueProxyModel(QObject *parent = nullptr);
 
-    // Basic functionality:
-    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-    int columnCount(const QModelIndex &parent = QModelIndex()) const override;
-
-    QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
-
+    void reset();
 private:
+    mutable QSet<QString> data;
+
+    // QSortFilterProxyModel interface
+protected:
+    virtual bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const;
+    void invalidateFilter();
 };
 
 #endif // UNIQUEPROXYMODEL_H

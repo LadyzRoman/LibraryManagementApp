@@ -1,12 +1,10 @@
 #include "booktablemodel.h"
 #include "model/sqlrecordbookmodel.h"
-#include <QDebug>
 
 
 BookTableModel::BookTableModel(QObject *parent)
     : QSqlQueryModel(parent)
-{
-}
+{}
 
 QVariant BookTableModel::headerData(int section, Qt::Orientation orientation, int role) const
 {

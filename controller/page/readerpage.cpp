@@ -1,11 +1,12 @@
 #include "readerpage.h"
 #include "ui_readerpage.h"
-#include "databaseexception.h"
+
 
 #include <QMessageBox>
 #include <QSqlRecord>
 #include <QSqlField>
 
+#include "exception/databaseexception.h"
 
 ReaderPage::ReaderPage(DataBase * db, ReaderTableModel * readerTableModel,  QWidget *parent) :
     QWidget(parent),
@@ -65,7 +66,7 @@ void ReaderPage::newReader()
     ReaderEditDialog dialog;
 
     dialog.setWindowTitle("Новый читатель");
-    if (dialog.exec() != QDialog::Rejected)
+    if (dialog.exec() == QDialog::Accepted)
     {
         ReaderModel * reader = dialog.getReader();
         try

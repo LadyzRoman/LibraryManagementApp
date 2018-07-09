@@ -1,9 +1,10 @@
 #include "bookeditdialog.h"
 #include "ui_bookeditdialog.h"
 
-#include "model/sqlrecordbookmodel.h"
 #include <QAbstractButton>
 #include <QMessageBox>
+
+#include "model/sqlrecordbookmodel.h"
 
 BookEditDialog::BookEditDialog(QWidget *parent) :
     QDialog(parent),
@@ -27,6 +28,7 @@ BookEditDialog::BookEditDialog(BookModel * book, QWidget *parent):
 BookEditDialog::~BookEditDialog()
 {
     delete ui;
+    delete book;
 }
 
 BookModel *BookEditDialog::getBook()

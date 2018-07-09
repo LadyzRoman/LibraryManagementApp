@@ -1,31 +1,34 @@
 #include "uniqueproxymodel.h"
+#include <QDebug>
 
 UniqueProxyModel::UniqueProxyModel(QObject *parent)
-    : QAbstractTableModel(parent)
+    : QSortFilterProxyModel(parent)
 {
 }
 
-int UniqueProxyModel::rowCount(const QModelIndex &parent) const
+void UniqueProxyModel::reset()
 {
-    if (parent.isValid())
-        return 0;
-
-    // FIXME: Implement me!
+    invalidateFilter();
 }
 
-int UniqueProxyModel::columnCount(const QModelIndex &parent) const
+bool UniqueProxyModel::filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const
 {
-    if (parent.isValid())
-        return 0;
+    QModelIndex columnIndex = sourceModel()->index(sourceRow, filterKeyColumn());
+    QString dataString = sourceModel()->data(columnIndex).toString();
+    bool accepted;
+    if (!data.contains(dataString))
+    {
+        data.insert(dataString);
+        accepted = true;
+    }
+    else
+        accepted = false;
 
-    // FIXME: Implement me!
+    return accepted && QSortFilterProxyModel::filterAcceptsRow(sourceRow, sourceParent);
 }
 
-QVariant UniqueProxyModel::data(const QModelIndex &index, int role) const
+void UniqueProxyModel::invalidateFilter()
 {
-    if (!index.isValid())
-        return QVariant();
-
-    // FIXME: Implement me!
-    return QVariant();
+    data.clear();
+    QSortFilterProxyModel::invalidateFilter();
 }

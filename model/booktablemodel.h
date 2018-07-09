@@ -2,7 +2,8 @@
 #define BooksTableModel_H
 
 #include <QSqlQueryModel>
-#include "model/sqlrecordbookmodel.h"
+
+#include "sqlrecordbookmodel.h"
 
 class BookTableModel : public QSqlQueryModel
 {

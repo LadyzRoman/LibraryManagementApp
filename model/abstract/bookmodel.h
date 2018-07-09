@@ -1,12 +1,12 @@
 #ifndef BOOKMODEL_H
 #define BOOKMODEL_H
 
-#include <QVariant>
+#include <QString>
 
 class BookModel
 {
 public:
-    BookModel();
+    virtual ~BookModel() {}
 
     virtual int getId() = 0;
     virtual int getCode() = 0;
@@ -15,9 +15,8 @@ public:
     virtual bool getBorrowStatus() = 0;
 
     virtual void setCode(int code) = 0;
-    virtual void setTitle(QString & title) = 0;
-    virtual void setAutor(QString & autor) = 0;
-    virtual bool setBorrowStatus(bool status) = 0;
+    virtual void setTitle(QString title) = 0;
+    virtual void setAutor(QString autor) = 0;
 };
 
 #endif // BOOKMODEL_H

@@ -1,12 +1,14 @@
+#include "bookpage.h"
+#include "ui_bookpage.h"
+
 #include <QMessageBox>
 #include <QSqlRecord>
 #include <QSqlField>
+#include <QDebug>
 
-#include "bookpage.h"
-#include "ui_bookpage.h"
-#include "bookeditdialog.h"
-#include "databaseexception.h"
-#include "noreaderexception.h"
+#include "controller/dialog/bookeditdialog.h"
+#include "exception/databaseexception.h"
+#include "exception/noreaderexception.h"
 
 
 
@@ -20,7 +22,9 @@ BookPage::BookPage(DataBase *db, BookTableModel *bookTableModel, ReaderTableMode
     currentReaderModel(new ReaderProxyModel),
     currentReaderMapper(new QDataWidgetMapper),
     lastNameCompleter(new QCompleter),
-    firstNameCompleter(new QCompleter)
+    firstNameCompleter(new QCompleter),
+    lastNameUniqueProxy(new UniqueProxyModel),
+    firstNameUniqueProxy(new UniqueProxyModel)
 {
     ui->setupUi(this);
 
@@ -37,6 +41,8 @@ BookPage::~BookPage()
     delete currentReaderModel;
     delete lastNameCompleter;
     delete firstNameCompleter;
+    delete lastNameUniqueProxy;
+    delete firstNameUniqueProxy;
 }
 
 void BookPage::initModel()
@@ -52,13 +58,21 @@ void BookPage::initModel()
     currentReaderMapper->addMapping(ui->lastNameFindLineEdit, 1);
     currentReaderMapper->addMapping(ui->firstNameFindLineEdit, 2);
 
-    lastNameCompleter->setModel(currentReaderModel);
+    lastNameUniqueProxy->setDynamicSortFilter(true);
+    lastNameUniqueProxy->setFilterKeyColumn(1);
+    lastNameUniqueProxy->setSourceModel(currentReaderModel);
+
+    lastNameCompleter->setModel(lastNameUniqueProxy);
     lastNameCompleter->setCompletionMode(QCompleter::PopupCompletion);
     lastNameCompleter->setCompletionRole(Qt::DisplayRole);
     lastNameCompleter->setCaseSensitivity(Qt::CaseInsensitive);
     lastNameCompleter->setCompletionColumn(1);
 
-    firstNameCompleter->setModel(currentReaderModel);
+    firstNameUniqueProxy->setDynamicSortFilter(true);
+    firstNameUniqueProxy->setFilterKeyColumn(2);
+    firstNameUniqueProxy->setSourceModel(currentReaderModel);
+
+    firstNameCompleter->setModel(firstNameUniqueProxy);
     firstNameCompleter->setCompletionMode(QCompleter::PopupCompletion);
     firstNameCompleter->setCompletionRole(Qt::DisplayRole);
     firstNameCompleter->setCaseSensitivity(Qt::CaseInsensitive);
@@ -211,6 +225,8 @@ void BookPage::deleteBook()
             QMessageBox::critical(this, "Ошибка!", "Ошибка базы данных: " + e.getMessage());
         }
     }
+
+    delete book;
 }
 
 void BookPage::currentReaderChanged(int id)
@@ -315,9 +331,13 @@ void BookPage::on_borrowBookButton_clicked()
             {
                 QMessageBox::critical(this, "Ошибка!", "Ошибка базы данных: " + e.getMessage());
             }
+
+            delete book;
         }
         else
             QMessageBox::warning(this,"Предупреждение!", "Вы не выбрали книгу");
+
+        delete currentReader;
     }
     else
         QMessageBox::warning(this,"Предупреждение!", "Вы не выбрали читателя");
@@ -335,6 +355,8 @@ void BookPage::on_returnBookButton_clicked()
     emit returnBook(readerId, book->getId());
     bookTableModel->reload();
 
+    delete book;
+
 }
 
 void BookPage::on_clearFilterButton_clicked()
@@ -348,14 +370,19 @@ void BookPage::on_clearFilterButton_clicked()
 void BookPage::on_idFindLineEdit_textEdited(const QString & id)
 {
     ui->findButton->setEnabled(!id.isEmpty() || readerPrepared);
+    lastNameUniqueProxy->reset();
+    firstNameUniqueProxy->reset();
     setReaderPrepared(false);
 }
 
 void BookPage::on_lastNameFindLineEdit_textEdited(const QString & lastName)
 {
+
     currentReaderModel->setIdFilter(-1);
+
     ui->idFindLineEdit->setText(QString());
     currentReaderModel->setFirstNameFilter(QString());
+
     ui->firstNameFindLineEdit->setText(QString());
     lastNameCompleter->setCompletionPrefix(lastName);
     bool compare = QString::compare(lastNameCompleter->currentCompletion(), lastName, Qt::CaseInsensitive) == 0;
@@ -363,7 +390,11 @@ void BookPage::on_lastNameFindLineEdit_textEdited(const QString & lastName)
     if (compare)
         currentReaderModel->setLastNameFilter('^' + lastName + '$');
     else
+    {
         currentReaderModel->setLastNameFilter(QString());
+        lastNameUniqueProxy->reset();
+        firstNameUniqueProxy->reset();
+    }
     setReaderPrepared(false);
 }
 
@@ -377,7 +408,11 @@ void BookPage::on_firstNameFindLineEdit_textEdited(const QString & firstName)
     if (compare)
         currentReaderModel->setFirstNameFilter('^' + firstName + '$');
     else
+    {
         currentReaderModel->setFirstNameFilter(QString());
+        lastNameUniqueProxy->reset();
+        firstNameUniqueProxy->reset();
+    }
     setReaderPrepared(false);
 }
 
@@ -391,6 +426,7 @@ void BookPage::bookTableSelectionChanged(const QItemSelection &selected, const Q
         int row = filteredBookModel->mapToSource(selected.indexes().first()).row();
         BookModel * book = bookTableModel->getBook(row);
         borrowed = book->getBorrowStatus();
+        delete book;
     }
     ui->borrowBookButton->setEnabled(!selected.isEmpty() && borrowed && readerPrepared);
     ui->returnBookButton->setEnabled(!selected.isEmpty() && !borrowed);

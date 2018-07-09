@@ -9,9 +9,11 @@
 #include <QSettings>
 #include <QDir>
 #include <QFile>
-#include <QDebug>
-#include "readermodel.h"
-#include "bookmodel.h"
+
+#include "model/abstract/bookmodel.h"
+#include "model/abstract/readermodel.h"
+#include "model/sqlrecordreadermodel.h"
+
 
 class DataBase : public QObject
 {
@@ -22,43 +24,44 @@ public:
     {}
 
     void connectToDataBase();
-    bool insertReader(ReaderModel & model);
-    bool updateReader(ReaderModel & model);
-    bool deleteReader(int id);
+    void closeDB();
 
-    bool insertBook(BookModel & model);
-    bool updateBook(BookModel & model);
-    bool deleteBook(int id);
+    bool isOpen();
 
-    bool deleteReaderStat(int readerId);
-    bool deleteStat();
+    void insertReader(ReaderModel * model);
+    void updateReader(ReaderModel * model);
+    void deleteReader(int id);
 
-    ReaderModel getReader(int id);
-    ReaderModel getBorrower(int bookId);
+    void insertBook(BookModel * model);
+    void updateBook(BookModel * model);
+    void deleteBook(int id);
+
+    void deleteReaderStat(int readerId);
+    void deleteStat();
+
+    SqlRecordReaderModel getReader(int id);
+    int getBorrowerId(int bookId);
 
     QSqlRecord getBriefStat(QDate start, QDate end);
     QString getFullStatQuery(QDate start, QDate end);
 
-    QString getReaderInfoQuery(int id);
+    QString getReaderBookInfoQuery(int id);
     QString getReaderStatQuery(int id);
     QString getLastNameModelQuery();
     QString getFirstNameModelQuery(const QString lastName);
 
 
-    bool insertBookBorrowRecord(int bookId, int readerId, bool borrowed);
+    void insertBookBorrowRecord(int bookId, int readerId, bool borrowed);
 
 private:
     QSqlDatabase db;
-    QString dbName;
-    QString dbPath;
 
 private:
-    bool openDB();
-    bool restoreDB();
-    void closeDB();
-    bool createBookTable();
-    bool createReaderTable();
-    bool createBookStatTable();
+    void openDB();
+    void restoreDB();
+    void createBookTable();
+    void createReaderTable();
+    void createBookStatTable();
 signals:
 
 public slots:

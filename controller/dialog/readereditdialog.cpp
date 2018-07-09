@@ -1,7 +1,9 @@
 #include "readereditdialog.h"
 #include "ui_readereditdialog.h"
-#include "model/sqlrecordreadermodel.h"
+
 #include <QMessageBox>
+
+#include "model/sqlrecordreadermodel.h"
 
 ReaderEditDialog::ReaderEditDialog(QWidget *parent) :
     QDialog(parent),
@@ -26,6 +28,7 @@ ReaderEditDialog::ReaderEditDialog(ReaderModel *reader, QWidget *parent):
 ReaderEditDialog::~ReaderEditDialog()
 {
     delete ui;
+    delete reader;
 }
 
 ReaderModel *ReaderEditDialog::getReader()

@@ -4,11 +4,13 @@
 #include <QWidget>
 #include <QCompleter>
 #include <QDataWidgetMapper>
+
 #include "database.h"
-#include "booktablemodel.h"
-#include "bookproxymodel.h"
-#include "readertablemodel.h"
-#include "readerproxymodel.h"
+#include "model/booktablemodel.h"
+#include "model/readertablemodel.h"
+#include "model/proxy/bookproxymodel.h"
+#include "model/proxy/readerproxymodel.h"
+#include "model/proxy/uniqueproxymodel.h"
 
 namespace Ui {
 class BookPage;
@@ -22,11 +24,12 @@ public:
     BookPage(DataBase * db, BookTableModel * bookTableModel, ReaderTableModel * readerTableModel, QWidget * parent = 0);
     ~BookPage();
 
+    void initUI();
 
 private:
     void initModel();
     void initConnection();
-    void initUI();
+
     void setReaderPrepared(bool prepared);
 
 public slots:
@@ -80,6 +83,9 @@ private:
 
     ReaderProxyModel * currentReaderModel;
     QDataWidgetMapper * currentReaderMapper;
+
+    UniqueProxyModel * lastNameUniqueProxy;
+    UniqueProxyModel * firstNameUniqueProxy;
     QCompleter * lastNameCompleter;
     QCompleter * firstNameCompleter;
 

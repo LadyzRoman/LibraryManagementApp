@@ -1,13 +1,13 @@
 #ifndef READERINFOPAGE_H
 #define READERINFOPAGE_H
 
-#include "database.h"
-#include "readertablemodel.h"
-#include "model/abstract/readermodel.h"
-
 #include <QDataWidgetMapper>
 #include <QWidget>
 #include <QItemSelection>
+
+#include "database.h"
+#include "model/readertablemodel.h"
+#include "model/abstract/readermodel.h"
 
 namespace Ui {
 class ReaderInfoPage;
@@ -20,6 +20,8 @@ class ReaderInfoPage : public QWidget
 public:
     ReaderInfoPage(DataBase * db,  QWidget *parent = 0);
     ~ReaderInfoPage();
+
+    void initUI();
 
 signals:
     borrowButtonClicked(int id);
@@ -46,7 +48,6 @@ private slots:
 private:
     void initModel();
     void initConnection();
-    void initUI();
 
     void reloadReaderBookInfo();
     void reloadReaderStatInfo();

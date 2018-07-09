@@ -4,9 +4,11 @@
 #include <QWidget>
 
 #include "database.h"
-#include "readertablemodel.h"
-#include "readereditdialog.h"
-#include "readerproxymodel.h"
+#include "model/readertablemodel.h"
+#include "model/proxy/readerproxymodel.h"
+#include "controller/dialog/readereditdialog.h"
+
+
 
 namespace Ui {
 class ReaderPage;
@@ -20,6 +22,8 @@ public:
     ReaderPage(DataBase * db, ReaderTableModel * readerTableModel,  QWidget *parent = 0);
     ~ReaderPage();
 
+    void initUI();
+
 public slots:
     void newReader();
 
@@ -30,7 +34,6 @@ public slots:
 private:
     void initModel();
     void initConnection();
-    void initUI();
 
 signals:
     void tableSelectionStatusChanged(bool status);

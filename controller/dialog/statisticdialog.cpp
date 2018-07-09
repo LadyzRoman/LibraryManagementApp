@@ -1,10 +1,12 @@
 #include "statisticdialog.h"
 #include "ui_statisticdialog.h"
-#include "statisticexception.h"
-#include "databaseexception.h"
+
 #include <QDebug>
 #include <QSqlRecord>
 #include <QMessageBox>
+
+#include "exception/statisticexception.h"
+#include "exception/databaseexception.h"
 
 StatisticDialog::StatisticDialog(QWidget *parent) :
     QDialog(parent),

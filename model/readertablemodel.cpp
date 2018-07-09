@@ -2,8 +2,6 @@
 #include "model/sqlrecordreadermodel.h"
 
 
-
-
 ReaderTableModel::ReaderTableModel(QObject *parent)
     : QSqlQueryModel(parent)
 {

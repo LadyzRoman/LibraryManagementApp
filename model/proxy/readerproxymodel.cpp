@@ -1,5 +1,4 @@
 #include "readerproxymodel.h"
-#include <QDebug>
 
 ReaderProxyModel::ReaderProxyModel(QObject *parent)
     : QSortFilterProxyModel(parent)
